@@ -24,7 +24,7 @@ namespace Plugin_for_Pioneer
             //Чтение параметра
             try
             {
-                var selectedRef = uidoc.Selection.PickObjects(Autodesk.Revit.UI.Selection.ObjectType.Element, "Выберите элементы");
+                var selectedRef = uidoc.Selection.PickObjects(Autodesk.Revit.UI.Selection.ObjectType.Element, "Выберите элементы модели");
                 var elementList = new List<Element>();
 
                 foreach (var seleсtedElement in selectedRef)
