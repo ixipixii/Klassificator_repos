@@ -4,7 +4,7 @@
 library
 C#
 .cs
-C:\Users\kseni\source\repos\Plugin_for_Pioneer\Plugin_for_Pioneer\obj\Debug\
+C:\Users\kseni\source\repos\Plugin_for_Pioneer\Klassificator_repos\Plugin_for_Pioneer\obj\Debug\
 Plugin_for_Pioneer
 none
 false
@@ -12,9 +12,9 @@ DEBUG;TRACE
 
 2914271330
 
-13-521238112
-27-457065310
+141400540009
+25-843456259
 CategoryView\CategoryView.xaml;MainView\MainView.xaml;
 
-False
+True
 
