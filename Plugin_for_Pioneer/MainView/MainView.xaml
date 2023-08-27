@@ -1,0 +1,19 @@
+﻿<Window x:Class="Plugin_for_Pioneer.MainView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Plugin_for_Pioneer"
+             mc:Ignorable="d" 
+             MaxHeight="150" MaxWidth="300"
+             MinHeight="150" MinWidth="300"
+        Title = "Классификатор элемента">
+    <StackPanel>
+        <Label  Content="Выберите способ выбора элементов"
+                Margin="5"/>
+        <Button Content="На 3D виде" Command="{Binding SelectCommand3D}"
+                Margin="5"/>
+        <Button Content="По категориям" Command="{Binding SelectCommandCategory}"
+                Margin="5"/>
+    </StackPanel>
+</Window>

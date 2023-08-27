@@ -1,0 +1,46 @@
+﻿<Window x:Class="Plugin_for_Pioneer.CategoryView.CategoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Plugin_for_Pioneer.CategoryView"
+             mc:Ignorable="d" 
+             Height="350" Width="300" MinWidth="200"
+        Title = "Выбор по категории">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="36"></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition Height="auto"/>
+        </Grid.RowDefinitions>
+        <Label  Grid.Row="0"
+                Content="Выберите категорию"
+                Margin="5 5 5 5"/>
+        <ListView x:Name="LB" 
+                 Grid.Row="1"
+                 Margin="5 0 5 0" 
+                 SelectionMode="Multiple"
+                 SelectedItem = "{Binding SelectedCategoryList}"
+                 SelectionChanged= "ListBox_SelectionChanged"
+                 ScrollViewer.VerticalScrollBarVisibility="Visible">
+        </ListView> 
+        <Button Content="Выбрать категорию" 
+                Command="{Binding SaveCommand}"
+                Margin="10"
+                Grid.Row="2"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Width="150"
+                Height="25"/>
+        <TextBox
+                x:Name="TB"
+                TextChanged="TextBox_TextChanged"
+                Margin="10"
+                Grid.Row="2"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                MinWidth="100"
+                Width="auto"
+                Height="25"/>
+    </Grid>
+</Window>

@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+	<AddIn Type="Application">
+		<Name>Plugin_for_Pioneer</Name>
+		<Assembly>Klassificator\Plugin_for_Pioneer.dll</Assembly>
+		<ClientId>50793477-08EE-4155-98C3-1158675C7C3D</ClientId>
+		<FullClassName>Plugin_for_Pioneer.MainPanel</FullClassName>
+		<Text>Test_Plagin_2</Text>
+		<VendorId>ADSK</VendorId>
+	</AddIn>
+</RevitAddIns>
