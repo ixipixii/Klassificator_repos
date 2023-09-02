@@ -36,21 +36,107 @@ namespace Plugin_for_Pioneer
         {
             try //Добавление и изменение параметра
             {
+                //Чтение файла
+                //new
+                List<String> listExcelPnr_1 = new List<String>();
+                List<String> listExcelPnr_2 = new List<String>();
+                List<String> listExcelGuid = new List<String>();
+                //new
+
+                OpenFileDialog openFileDialog = new OpenFileDialog();
+                openFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                openFileDialog.Filter = "All files(*.*)|*.*";
+
+                string filePath = string.Empty;
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                    filePath = openFileDialog.FileName;
+
+                if (string.IsNullOrEmpty(filePath))
+                    return Result.Cancelled;
+
+                using (FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                {
+                    IWorkbook workbook = new XSSFWorkbook(filePath);
+                    ISheet sheet = workbook.GetSheetAt(index: 0);
+
+                    int rowIndex = 0;
+
+                    //new
+                    while (sheet.GetRow(rowIndex) != null)
+                    {
+                        if (sheet.GetRow(rowIndex).GetCell(0) == null ||
+                            sheet.GetRow(rowIndex).GetCell(1) == null ||
+                            sheet.GetRow(rowIndex).GetCell(2) == null)
+                        {
+                            rowIndex++;
+                            continue;
+                        }
+
+                        listExcelPnr_1.Add(sheet.GetRow(rowIndex).GetCell(0).StringCellValue);
+                        listExcelPnr_1.Add(sheet.GetRow(rowIndex).GetCell(1).StringCellValue);
+                        listExcelPnr_1.Add(sheet.GetRow(rowIndex).GetCell(2).StringCellValue);
+
+                    }
+                    //new
+
+                    /*                    using (Transaction ts = new Transaction(doc, "Set parameters"))
+                                        {
+                                            ts.Start();
+                                            while (sheet.GetRow(rowIndex) != null)
+                                            {
+                                                if (sheet.GetRow(rowIndex).GetCell(0) == null ||
+                                                    sheet.GetRow(rowIndex).GetCell(1) == null ||
+                                                    sheet.GetRow(rowIndex).GetCell(2) == null)
+                                                {
+                                                    rowIndex++;
+                                                    continue;
+                                                }
+
+                                                string pnr_1 = sheet.GetRow(rowIndex).GetCell(0).StringCellValue;
+                                                string pnr_2 = sheet.GetRow(rowIndex).GetCell(1).StringCellValue;
+                                                string guid = sheet.GetRow(rowIndex).GetCell(2).StringCellValue;
+
+                                                var element = elementList.FirstOrDefault(r => r.UniqueId == guid);
+
+                                                if (element == null)
+                                                {
+                                                    rowIndex++;
+                                                    continue;
+                                                }
+                                                    element.LookupParameter("PNR_Код по классификатору").Set(pnr_1);
+                                                    element.LookupParameter("PNR_Описание по классификатору").Set(pnr_2);
+                                                    rowIndex++;
+                                            }
+                                            ts.Commit();
+                                        }*/
+                }
+
+                //Чтение элементов модели
                 var selectedRef = uidoc.Selection.PickObjects(Autodesk.Revit.UI.Selection.ObjectType.Element, "Выберите элементы");
                 var elementList = new List<Element>();
                 var categoryList = new List<BuiltInCategory>();
 
                 List<List<ElementId>> groupElements = new List<List<ElementId>>();
 
+                List<Data> listData = new List<Data>();
+                Data elementData = new Data();
+                
+                List<String> listPnr_1 = new List<String>();
+                List<String> listPnr_2 = new List<String>();
+                List<String> listGuid = new List<String>();
+
                 Transaction t = new Transaction(doc, "UnGroup");
                 t.Start();
                 foreach (var seleсtedElement in selectedRef)
                 {
                     Element element = doc.GetElement(seleсtedElement);
+                    
+                    //Разгруппировка
                     if ((BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_IOSModelGroups)
                     {
                         Group group = (Group)element;
                         groupElements.Add(group.UngroupMembers().ToList());
+                        
                         foreach (var groupUp in groupElements)
                         {
                             foreach (var groupDown in groupUp)
@@ -64,12 +150,25 @@ namespace Plugin_for_Pioneer
                         }
                         continue;
                     }
+                    
                     if ((BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_IOSModelGroups ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Sections ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Views ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Levels)
                         continue;
+                    
                     elementList.Add(element);
+                    elementData.pnr_1 = element.LookupParameter("PNR_Код по классификатору").AsString();
+                    elementData.pnr_2 = element.LookupParameter("PNR_Описание по классификатору").AsString();
+                    elementData.guid = element.UniqueId;
+
+                    listData.Add(elementData);
+
+                    listPnr_1.Add(element.LookupParameter("PNR_Код по классификатору").AsString());
+                    listPnr_2.Add(element.LookupParameter("PNR_Описание по классификатору").AsString());
+                    listGuid.Add(element.UniqueId);
+
+                    //Добавление категорий
                     Category category = element.Category;
                     BuiltInCategory enumCategory = (BuiltInCategory)category.Id.IntegerValue;
                     categoryList.Add(enumCategory);
@@ -81,7 +180,6 @@ namespace Plugin_for_Pioneer
                 {
                     categorySet.Insert(Category.GetCategory(doc, category));
                 }
-
 
                 using (Transaction ts = new Transaction(doc, "Add parameter"))
                 {
@@ -109,70 +207,13 @@ namespace Plugin_for_Pioneer
                     ts.Commit();
                 }
 
-/*                //Разгруппировка
-                List<ElementId> groupElements = new List<ElementId>();
-                Transaction tr = new Transaction(doc, "UnGroup");
-                tr.Start();
-                foreach (var element in elementList)
+
+
+                int i = 0;
+                foreach(var element in listData)
                 {
-                    if ((BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_IOSModelGroups)
-                    {
-                        Group group = (Group)element;
-                        groupElements = group.UngroupMembers().ToList();
-                    }
                 }
-                tr.Commit();*/
-
-                OpenFileDialog openFileDialog = new OpenFileDialog();
-                openFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                openFileDialog.Filter = "All files(*.*)|*.*";
-
-                string filePath = string.Empty;
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                    filePath = openFileDialog.FileName;
-
-                if (string.IsNullOrEmpty(filePath))
-                    return Result.Cancelled;
-
-                using (FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-                {
-                    IWorkbook workbook = new XSSFWorkbook(filePath);
-                    ISheet sheet = workbook.GetSheetAt(index: 0);
-
-                    int rowIndex = 0;
-
-
-                    using (Transaction ts = new Transaction(doc, "Set parameters"))
-                    {
-                        ts.Start();
-                        while (sheet.GetRow(rowIndex) != null)
-                        {
-                            if (sheet.GetRow(rowIndex).GetCell(0) == null ||
-                                sheet.GetRow(rowIndex).GetCell(1) == null ||
-                                sheet.GetRow(rowIndex).GetCell(2) == null)
-                            {
-                                rowIndex++;
-                                continue;
-                            }
-
-                            string pnr_1 = sheet.GetRow(rowIndex).GetCell(0).StringCellValue;
-                            string pnr_2 = sheet.GetRow(rowIndex).GetCell(1).StringCellValue;
-                            string guid = sheet.GetRow(rowIndex).GetCell(2).StringCellValue;
-
-                            var element = elementList.FirstOrDefault(r => r.UniqueId == guid);
-
-                            if (element == null)
-                            {
-                                rowIndex++;
-                                continue;
-                            }
-                                element.LookupParameter("PNR_Код по классификатору").Set(pnr_1);
-                                element.LookupParameter("PNR_Описание по классификатору").Set(pnr_2);
-                                rowIndex++;
-                        }
-                        ts.Commit();
-                    }
-                }
+               
 
                 Transaction tr = new Transaction(doc, "NewGroup");
                 tr.Start();
