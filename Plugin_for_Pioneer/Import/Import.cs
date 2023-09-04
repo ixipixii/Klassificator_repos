@@ -34,7 +34,7 @@ namespace Plugin_for_Pioneer
 
         public Result Import3D(UIApplication uiapp, UIDocument uidoc, Document doc)
         {
-            try //Добавление и изменение параметра
+            try //Добавление и изменение парамет
             {
                 //Чтение файла
                 //new
