@@ -39,11 +39,10 @@ namespace Plugin_for_Pioneer
                 //Чтение файла
                 //new
                 List<Data> listDataExcel = new List<Data>();
-                Data excelData = new Data();
 
-                List<String> listExcelPnr_1 = new List<String>();
+/*                List<String> listExcelPnr_1 = new List<String>();
                 List<String> listExcelPnr_2 = new List<String>();
-                List<String> listExcelGuid = new List<String>();
+                List<String> listExcelGuid = new List<String>();*/
                 //new
 
                 OpenFileDialog openFileDialog = new OpenFileDialog();
@@ -75,14 +74,16 @@ namespace Plugin_for_Pioneer
                             continue;
                         }
 
+                        Data excelData = new Data();
                         excelData.pnr_1 = sheet.GetRow(rowIndex).GetCell(0).StringCellValue;
                         excelData.pnr_2 = sheet.GetRow(rowIndex).GetCell(1).StringCellValue;
                         excelData.guid = sheet.GetRow(rowIndex).GetCell(2).StringCellValue;                        
                         listDataExcel.Add(excelData);
+                        rowIndex++;
 
-                        listExcelPnr_1.Add(sheet.GetRow(rowIndex).GetCell(0).StringCellValue);
-                        listExcelPnr_2.Add(sheet.GetRow(rowIndex).GetCell(1).StringCellValue);
-                        listExcelGuid.Add(sheet.GetRow(rowIndex).GetCell(2).StringCellValue);
+                        /*                        listExcelPnr_1.Add(sheet.GetRow(rowIndex).GetCell(0).StringCellValue);
+                                                listExcelPnr_2.Add(sheet.GetRow(rowIndex).GetCell(1).StringCellValue);
+                                                listExcelGuid.Add(sheet.GetRow(rowIndex).GetCell(2).StringCellValue);*/
 
                     }
                     //new
@@ -127,11 +128,10 @@ namespace Plugin_for_Pioneer
                 List<List<ElementId>> groupElements = new List<List<ElementId>>();
 
                 List<Data> listDataElement = new List<Data>();
-                Data elementData = new Data();
 
-                List<String> listPnr_1 = new List<String>();
+/*                List<String> listPnr_1 = new List<String>();
                 List<String> listPnr_2 = new List<String>();
-                List<String> listGuid = new List<String>();
+                List<String> listGuid = new List<String>();*/
 
                 Transaction t = new Transaction(doc, "UnGroup");
                 t.Start();
@@ -139,7 +139,7 @@ namespace Plugin_for_Pioneer
                 {
                     Element element = doc.GetElement(seleсtedElement);
 
-                    //Разгруппировка
+                    /*//Разгруппировка
                     if ((BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_IOSModelGroups)
                     {
                         Group group = (Group)element;
@@ -157,7 +157,7 @@ namespace Plugin_for_Pioneer
                             }
                         }
                         continue;
-                    }
+                    }*/
 
                     if ((BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_IOSModelGroups ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Sections ||
@@ -166,15 +166,22 @@ namespace Plugin_for_Pioneer
                         continue;
 
                     elementList.Add(element);
-                    
-                    elementData.pnr_1 = element.LookupParameter("PNR_Код по классификатору").AsString();
-                    elementData.pnr_2 = element.LookupParameter("PNR_Описание по классификатору").AsString();
+
+                    //Закидываем данные элемента в объект Data
+                    Data elementData = new Data();
+                    if(element.LookupParameter("PNR_Код по классификатору") != null 
+                        || element.LookupParameter("PNR_Описание по классификатору") != null)
+                    {
+                        elementData.pnr_1 = element.LookupParameter("PNR_Код по классификатору").AsString();
+                        elementData.pnr_2 = element.LookupParameter("PNR_Описание по классификатору").AsString();
+                    }
                     elementData.guid = element.UniqueId;
+                    elementData.element = element;
                     listDataElement.Add(elementData);
 
-                    listPnr_1.Add(element.LookupParameter("PNR_Код по классификатору").AsString());
+/*                    listPnr_1.Add(element.LookupParameter("PNR_Код по классификатору").AsString());
                     listPnr_2.Add(element.LookupParameter("PNR_Описание по классификатору").AsString());
-                    listGuid.Add(element.UniqueId);
+                    listGuid.Add(element.UniqueId);*/
 
                     //Добавление категорий
                     Category category = element.Category;
@@ -194,7 +201,8 @@ namespace Plugin_for_Pioneer
                     ts.Start();
                     foreach (var element in elementList)
                     {
-                        if (element.LookupParameter("PNR_Код по классификатору") == null || element.LookupParameter("PNR_Описание по классификатору") == null)
+                        if (element.LookupParameter("PNR_Код по классификатору") == null 
+                            || element.LookupParameter("PNR_Описание по классификатору") == null)
                         {
                             CreateShared createShared_pnr_1 = new CreateShared();
                             createShared_pnr_1.CreateSharedParameter(uiapp.Application,
@@ -216,7 +224,6 @@ namespace Plugin_for_Pioneer
                 }
 
 
-
                 /*int i = 0;
                 foreach (var element in listData)
                 {
@@ -225,22 +232,24 @@ namespace Plugin_for_Pioneer
 
                 int i = 0;
 
-                foreach (var guid in listExcelGuid)
+                foreach (var excel in listDataExcel)
                 {
-                    var desieredElement = elementList.FirstOrDefault(r => r.UniqueId == guid);
+                    var desieredElement = listDataElement.FirstOrDefault(r => r.guid == excel.guid);
                     if (desieredElement != null)
                     {
-                        
+                        if (desieredElement.element.LookupParameter("PNR_Код по классификатору").AsString() == excel.pnr_1)
+                            continue;
+                        desieredElement.element.LookupParameter("PNR_Код по классификатору").Set(excel.pnr_1);
                     }
                 }
 
-                Transaction tr = new Transaction(doc, "NewGroup");
+/*                Transaction tr = new Transaction(doc, "NewGroup");
                 tr.Start();
                 foreach (var group in groupElements)
                 {
                     Group groupNew = doc.Create.NewGroup(group);
                 }
-                tr.Commit();
+                tr.Commit();*/
             }
 
             catch (Autodesk.Revit.Exceptions.OperationCanceledException) { }
