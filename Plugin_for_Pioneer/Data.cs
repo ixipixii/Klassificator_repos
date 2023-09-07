@@ -16,5 +16,7 @@ namespace Plugin_for_Pioneer
         public string guid { get; set;}
 
         public Element element { get; set; }
+
+        public bool flag { get; set; }
     }
 }
