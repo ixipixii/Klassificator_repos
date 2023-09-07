@@ -117,7 +117,9 @@ namespace Plugin_for_Pioneer
                     if ((BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_IOSModelGroups ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Sections ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Views ||
-                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Levels)
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Levels ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_VolumeOfInterest ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_BoundaryConditions)
                         continue;
 
                     elementList.Add(element);
@@ -178,40 +180,44 @@ namespace Plugin_for_Pioneer
                 DateTime start = DateTime.Now; //Засекаем время
 
                 //Многопоточность
-                /*                Parallel.ForEach(listDataExcel, excel =>
-                                {
-                                    var desieredElement = listDataElement.FirstOrDefault(r => r.guid == excel.guid);
-                                    if (desieredElement != null)
-                                    {
-                                        //Если парамтеры равны, ничего не делаем
-                *//*                        if (desieredElement.pnr_1 == excel.pnr_1 || desieredElement.pnr_2 == excel.pnr_2)
-                                            return;*//*
-
-                                        //Если парамтеры не равны, включаем флаг изменений
-                                        if (desieredElement.pnr_1 != excel.pnr_1 || desieredElement.pnr_1 != excel.pnr_2)
-                                            desieredElement.flag = true;
-                                    }
-                                });*/
-
-                //Без многопоточности
-                foreach (var excel in listDataExcel)
+                Parallel.ForEach(listDataExcel, excel =>
                 {
                     var desieredElement = listDataElement.FirstOrDefault(r => r.guid == excel.guid);
                     if (desieredElement != null)
                     {
                         //Если парамтеры равны, ничего не делаем
-                        if (desieredElement.pnr_1 == excel.pnr_1)
-                            continue;
-                        else if (desieredElement.pnr_2 == excel.pnr_2)
-                            continue;
+                        if (desieredElement.pnr_1 == excel.pnr_1 || desieredElement.pnr_2 == excel.pnr_2)
+                            desieredElement.flag = false;
 
                         //Если парамтеры не равны, включаем флаг изменений
                         if (desieredElement.pnr_1 != excel.pnr_1 || desieredElement.pnr_1 != excel.pnr_2)
                             desieredElement.flag = true;
                     }
-                }
+                });
+
+                //Без многопоточности
+                /*                foreach (var excel in listDataExcel)
+                                {
+                                    var desieredElement = listDataElement.FirstOrDefault(r => r.guid == excel.guid);
+                                    if (desieredElement != null)
+                                    {
+                                        //Если парамтеры равны, ничего не делаем
+                                        if (desieredElement.pnr_1 == excel.pnr_1)
+                                            continue;
+                                        else if (desieredElement.pnr_2 == excel.pnr_2)
+                                            continue;
+
+                                        //Если парамтеры не равны, включаем флаг изменений
+                                        if (desieredElement.pnr_1 != excel.pnr_1 || desieredElement.pnr_1 != excel.pnr_2)
+                                            desieredElement.flag = true;
+                                    }
+                                }*/
 
                 //Заносим значения в параметр у элементов с флагом
+
+                DateTime end2; //Далее проверим как будет работать наша вычисления в многопоточном режиме                
+                DateTime start2 = DateTime.Now; //Засекаем время
+
                 Transaction transaction = new Transaction(doc, "Заносим значения в параметр");
                 transaction.Start();
                 foreach (var desieredElement in listDataElement)
@@ -229,10 +235,15 @@ namespace Plugin_for_Pioneer
                 TimeSpan taim = (end - start);
                 TaskDialog.Show("Время выполнения", $"{taim.TotalMilliseconds} миллисекунд");
 
+                end2 = DateTime.Now;
+                TimeSpan taim2 = (end2 - start2);
+                TaskDialog.Show("Время выполнения", $"{taim2.TotalMilliseconds} миллисекунд");
+
                 /*                Transaction tr = new Transaction(doc, "NewGroup");
                                 tr.Start();
                                 foreach (var group in groupElements)
                                 {
+
                                     Group groupNew = doc.Create.NewGroup(group);
                                 }
                                 tr.Commit();*/
