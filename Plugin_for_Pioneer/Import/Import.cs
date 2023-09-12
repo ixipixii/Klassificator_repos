@@ -119,7 +119,10 @@ namespace Plugin_for_Pioneer
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Views ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Levels ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_VolumeOfInterest ||
-                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_BoundaryConditions)
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_BoundaryConditions ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Grids ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_GridChains
+                        )
                         continue;
 
                     elementList.Add(element);
@@ -179,6 +182,9 @@ namespace Plugin_for_Pioneer
                 DateTime end; //Далее проверим как будет работать наша вычисления в многопоточном режиме                
                 DateTime start = DateTime.Now; //Засекаем время
 
+
+                List<Data> listDataElementTrue = new List<Data>();
+                //List<Data> listDataExcelTrue = new List<Data>();
                 //Многопоточность
                 Parallel.ForEach(listDataExcel, excel =>
                 {
@@ -191,9 +197,12 @@ namespace Plugin_for_Pioneer
 
                         //Если парамтеры не равны, включаем флаг изменений
                         if (desieredElement.pnr_1 != excel.pnr_1 || desieredElement.pnr_1 != excel.pnr_2)
-                            desieredElement.flag = true;
+                        {
+                            listDataElementTrue.Add(desieredElement);
+                        }
                     }
                 });
+                end = DateTime.Now; // Записываем текущее время
 
                 //Без многопоточности
                 /*                foreach (var excel in listDataExcel)
@@ -218,24 +227,29 @@ namespace Plugin_for_Pioneer
                 DateTime end2; //Далее проверим как будет работать наша вычисления в многопоточном режиме                
                 DateTime start2 = DateTime.Now; //Засекаем время
 
-                Transaction transaction = new Transaction(doc, "Заносим значения в параметр");
-                transaction.Start();
-                foreach (var desieredElement in listDataElement)
+                if (listDataElementTrue.Count > 0)
                 {
-                    var excelElement = listDataExcel.FirstOrDefault(r => r.guid == desieredElement.guid);
-                    if (desieredElement.flag)
+                    Transaction transaction = new Transaction(doc, "Заносим значения в параметр");
+                    transaction.Start();
+                    foreach (var desieredElementTrue in listDataElementTrue)
                     {
-                        desieredElement.element.LookupParameter("PNR_Код по классификатору").Set(excelElement.pnr_1);
-                        desieredElement.element.LookupParameter("PNR_Описание по классификатору").Set(excelElement.pnr_2);
+                        if (desieredElementTrue == null)
+                            continue;
+                        var excelElement = listDataExcel.FirstOrDefault(r => r.guid == desieredElementTrue.guid);
+                        if (desieredElementTrue != null)
+                        {
+                            desieredElementTrue.element.LookupParameter("PNR_Код по классификатору").Set(excelElement.pnr_1);
+                            desieredElementTrue.element.LookupParameter("PNR_Описание по классификатору").Set(excelElement.pnr_2);
+                        }
                     }
+                    transaction.Commit();
                 }
-                transaction.Commit();
+                end2 = DateTime.Now;
 
-                end = DateTime.Now; // Записываем текущее время
                 TimeSpan taim = (end - start);
                 TaskDialog.Show("Время выполнения", $"{taim.TotalMilliseconds} миллисекунд");
 
-                end2 = DateTime.Now;
+
                 TimeSpan taim2 = (end2 - start2);
                 TaskDialog.Show("Время выполнения", $"{taim2.TotalMilliseconds} миллисекунд");
 
