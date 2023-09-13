@@ -14,6 +14,7 @@ using System.Windows.Forms;
 using System.Threading.Tasks; // Библиотека для работы параллельными задачами
 using System.Collections.Concurrent; //Библиотека, содержащая потокобезопасные коллекции
 using System.Security.Policy;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
 
 namespace Plugin_for_Pioneer
 {
@@ -156,7 +157,7 @@ namespace Plugin_for_Pioneer
                 using (Transaction ts = new Transaction(doc, "Add parameter"))
                 {
                     ts.Start();
-                    foreach (var element in elementList)
+                    foreach (var element in elementList.Distinct())
                     {
                         if (element.LookupParameter("PNR_Код по классификатору") == null
                             || element.LookupParameter("PNR_Описание по классификатору") == null)
@@ -180,27 +181,22 @@ namespace Plugin_for_Pioneer
                     ts.Commit();
                 }
 
-                //List<Data> listDataElementTrue = new List<Data>();
-                ConcurrentBag<Data> listDataElementTrue = new ConcurrentBag<Data>();
+                ConcurrentBag<Data> listDataElementTrue = new ConcurrentBag<Data>(); ///Многопоточная коллекция
 
                var listDataElementSorted = listDataElement.OrderBy(pr => pr.guid).ToList();
                var listDataExcelSorted = listDataExcel.OrderBy(pr => pr.guid).ToList();
 
                 DateTime end; //Далее проверим как будет работать наша вычисления в многопоточном режиме                
                 DateTime start = DateTime.Now; //Засекаем время
-
                 //Многопоточность
                 Parallel.For(0, listDataElementSorted.Count, X =>
                 {
                     //var desieredElement = listDataElement.FirstOrDefault(r => r.guid == excel.guid);
                     if (listDataElementSorted[X] != null)
                     {
-/*                        //Если парамтеры равны, ничего не делаем
-                        if (listDataElementSorted[i].pnr_1 == excel.pnr_1 || listDataElementSorted[i].pnr_2 == excel.pnr_2)
-                            listDataElementTrue.flag = false;*/
-
                         //Если парамтеры не равны, добавляем в массив изменяемых элементов
-                        if (listDataElementSorted[X].pnr_1 != listDataExcelSorted[X].pnr_1 || listDataElementSorted[X].pnr_2 != listDataExcelSorted[X].pnr_2)
+                        if (listDataElementSorted[X].pnr_1 != listDataExcelSorted[X].pnr_1 
+                        || listDataElementSorted[X].pnr_2 != listDataExcelSorted[X].pnr_2)
                         {
                             if (listDataExcelSorted[X].pnr_1 != "" & listDataExcelSorted[X].pnr_2 != "")
                                 listDataElementTrue.Add(listDataElementSorted[X]);
@@ -209,36 +205,11 @@ namespace Plugin_for_Pioneer
                 });
                 end = DateTime.Now; // Записываем текущее время
 
-                /*                DateTime end; //Далее проверим как будет работать наша вычисления в многопоточном режиме                
-                                DateTime start = DateTime.Now; //Засекаем время
-                                //Без многопоточности
-                                foreach (var excel in listDataExcel)
-                                {
-                                    var desieredElement = listDataElement.FirstOrDefault(r => r.guid == excel.guid);
-                                    if (desieredElement != null)
-                                    {
-                                        //Если парамтеры равны, ничего не делаем
-                                        if (desieredElement.pnr_1 == excel.pnr_1)
-                                            continue;
-                                        else if (desieredElement.pnr_2 == excel.pnr_2)
-                                            continue;
-
-                                        //Если парамтеры не равны, добавляем в массив изменяемых элементов
-                                        if (desieredElement.pnr_1 != excel.pnr_1 || desieredElement.pnr_1 != excel.pnr_2)
-                                        {
-                                            if(excel.pnr_1 == "" & excel.pnr_2 == "")
-                                                continue;
-
-                                            listDataElementTrue.Add(desieredElement);
-                                        }
-                                    }
-                                }
-                                end = DateTime.Now; // Записываем текущее время*/
-
                 //Заносим значения в параметр у элементов с флагом
-
-                DateTime end2; //Далее проверим как будет работать наша вычисления в многопоточном режиме                
+                DateTime end2;              
                 DateTime start2 = DateTime.Now; //Засекаем время
+
+                List<List<ElementId>> groupElements = new List<List<ElementId>>();
 
                 if (listDataElementTrue.Count > 0)
                 {
@@ -249,8 +220,19 @@ namespace Plugin_for_Pioneer
                         if (desieredElementTrue == null)
                             continue;
                         var excelElement = listDataExcel.FirstOrDefault(r => r.guid == desieredElementTrue.guid);
-                        if (desieredElementTrue != null)
+                        if (desieredElementTrue != null) 
                         {
+                            if(desieredElementTrue.element.GroupId.IntegerValue != -1)
+                            {
+                                Group group = (Group)doc.GetElement(desieredElementTrue.element.GroupId);
+                                List<ElementId> elements = group.UngroupMembers().ToList();
+                                groupElements.Add(elements);
+                                foreach (var element in elements)
+                                {
+                                    if ((BuiltInCategory)element.IntegerValue == BuiltInCategory.OST_IOSModelGroups)
+                                        continue;
+                                }
+                            }
                             desieredElementTrue.element.LookupParameter("PNR_Код по классификатору").Set(excelElement.pnr_1);
                             desieredElementTrue.element.LookupParameter("PNR_Описание по классификатору").Set(excelElement.pnr_2);
                         }
@@ -266,14 +248,14 @@ namespace Plugin_for_Pioneer
                 TimeSpan taim2 = (end2 - start2);
                 TaskDialog.Show("Время выполнения", $"{taim2.TotalMilliseconds} миллисекунд");
 
-                /*                Transaction tr = new Transaction(doc, "NewGroup");
-                                tr.Start();
-                                foreach (var group in groupElements)
-                                {
+                Transaction tr = new Transaction(doc, "NewGroup");
+                tr.Start();
+                foreach (var group in groupElements)
+                {
 
-                                    Group groupNew = doc.Create.NewGroup(group);
-                                }
-                                tr.Commit();*/
+                    Group groupNew = doc.Create.NewGroup(group);
+                }
+                tr.Commit();
             }
 
             catch (Autodesk.Revit.Exceptions.OperationCanceledException) { }
