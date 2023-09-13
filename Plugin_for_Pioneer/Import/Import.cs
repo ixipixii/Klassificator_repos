@@ -179,13 +179,12 @@ namespace Plugin_for_Pioneer
                     ts.Commit();
                 }
 
+                //List<Data> listDataElementTrue = new List<Data>();
+                ConcurrentBag<Data> listDataElementTrue = new ConcurrentBag<Data>();
+
                 DateTime end; //Далее проверим как будет работать наша вычисления в многопоточном режиме                
                 DateTime start = DateTime.Now; //Засекаем время
-
-
-                List<Data> listDataElementTrue = new List<Data>();
-                //List<Data> listDataExcelTrue = new List<Data>();
-                //Многопоточность
+                                               //Многопоточность
                 Parallel.ForEach(listDataExcel, excel =>
                 {
                     var desieredElement = listDataElement.FirstOrDefault(r => r.guid == excel.guid);
@@ -198,14 +197,17 @@ namespace Plugin_for_Pioneer
                         //Если парамтеры не равны, включаем флаг изменений
                         if (desieredElement.pnr_1 != excel.pnr_1 || desieredElement.pnr_1 != excel.pnr_2)
                         {
-                            listDataElementTrue.Add(desieredElement);
+                            if (excel.pnr_1 != "" & excel.pnr_2 != "")
+                                listDataElementTrue.Add(desieredElement);
                         }
                     }
                 });
                 end = DateTime.Now; // Записываем текущее время
 
-                //Без многопоточности
-                /*                foreach (var excel in listDataExcel)
+                /*                DateTime end; //Далее проверим как будет работать наша вычисления в многопоточном режиме                
+                                DateTime start = DateTime.Now; //Засекаем время
+                                //Без многопоточности
+                                foreach (var excel in listDataExcel)
                                 {
                                     var desieredElement = listDataElement.FirstOrDefault(r => r.guid == excel.guid);
                                     if (desieredElement != null)
@@ -216,11 +218,17 @@ namespace Plugin_for_Pioneer
                                         else if (desieredElement.pnr_2 == excel.pnr_2)
                                             continue;
 
-                                        //Если парамтеры не равны, включаем флаг изменений
+                                        //Если парамтеры не равны, добавляем в массив изменяемых элементов
                                         if (desieredElement.pnr_1 != excel.pnr_1 || desieredElement.pnr_1 != excel.pnr_2)
-                                            desieredElement.flag = true;
+                                        {
+                                            if(excel.pnr_1 == "" & excel.pnr_2 == "")
+                                                continue;
+
+                                            listDataElementTrue.Add(desieredElement);
+                                        }
                                     }
-                                }*/
+                                }
+                                end = DateTime.Now; // Записываем текущее время*/
 
                 //Заносим значения в параметр у элементов с флагом
 
