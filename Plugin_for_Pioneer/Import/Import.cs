@@ -252,7 +252,6 @@ namespace Plugin_for_Pioneer
                 tr.Start();
                 foreach (var group in groupElements)
                 {
-
                     Group groupNew = doc.Create.NewGroup(group);
                 }
                 tr.Commit();
