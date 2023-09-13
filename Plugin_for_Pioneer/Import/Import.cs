@@ -13,6 +13,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Threading.Tasks; // Библиотека для работы параллельными задачами
 using System.Collections.Concurrent; //Библиотека, содержащая потокобезопасные коллекции
+using System.Security.Policy;
 
 namespace Plugin_for_Pioneer
 {
@@ -182,23 +183,27 @@ namespace Plugin_for_Pioneer
                 //List<Data> listDataElementTrue = new List<Data>();
                 ConcurrentBag<Data> listDataElementTrue = new ConcurrentBag<Data>();
 
+               var listDataElementSorted = listDataElement.OrderBy(pr => pr.guid).ToList();
+               var listDataExcelSorted = listDataExcel.OrderBy(pr => pr.guid).ToList();
+
                 DateTime end; //Далее проверим как будет работать наша вычисления в многопоточном режиме                
                 DateTime start = DateTime.Now; //Засекаем время
-                                               //Многопоточность
-                Parallel.ForEach(listDataExcel, excel =>
-                {
-                    var desieredElement = listDataElement.FirstOrDefault(r => r.guid == excel.guid);
-                    if (desieredElement != null)
-                    {
-                        //Если парамтеры равны, ничего не делаем
-                        if (desieredElement.pnr_1 == excel.pnr_1 || desieredElement.pnr_2 == excel.pnr_2)
-                            desieredElement.flag = false;
 
-                        //Если парамтеры не равны, включаем флаг изменений
-                        if (desieredElement.pnr_1 != excel.pnr_1 || desieredElement.pnr_1 != excel.pnr_2)
+                //Многопоточность
+                Parallel.For(0, listDataElementSorted.Count, X =>
+                {
+                    //var desieredElement = listDataElement.FirstOrDefault(r => r.guid == excel.guid);
+                    if (listDataElementSorted[X] != null)
+                    {
+/*                        //Если парамтеры равны, ничего не делаем
+                        if (listDataElementSorted[i].pnr_1 == excel.pnr_1 || listDataElementSorted[i].pnr_2 == excel.pnr_2)
+                            listDataElementTrue.flag = false;*/
+
+                        //Если парамтеры не равны, добавляем в массив изменяемых элементов
+                        if (listDataElementSorted[X].pnr_1 != listDataExcelSorted[X].pnr_1 || listDataElementSorted[X].pnr_2 != listDataExcelSorted[X].pnr_2)
                         {
-                            if (excel.pnr_1 != "" & excel.pnr_2 != "")
-                                listDataElementTrue.Add(desieredElement);
+                            if (listDataExcelSorted[X].pnr_1 != "" & listDataExcelSorted[X].pnr_2 != "")
+                                listDataElementTrue.Add(listDataElementSorted[X]);
                         }
                     }
                 });
@@ -387,4 +392,8 @@ namespace Plugin_for_Pioneer
             return Result.Succeeded;
         }
     }
+
 }
+
+
+
