@@ -90,31 +90,9 @@ namespace Plugin_for_Pioneer
 
                 List<Data> listDataElement = new List<Data>();
 
-                Transaction t = new Transaction(doc, "UnGroup");
-                t.Start();
                 foreach (var seleсtedElement in selectedRef)
                 {
-                    Element element = doc.GetElement(seleсtedElement);
-
-                    /*//Разгруппировка
-                    if ((BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_IOSModelGroups)
-                    {
-                        Group group = (Group)element;
-                        groupElements.Add(group.UngroupMembers().ToList());
-
-                        foreach (var groupUp in groupElements)
-                        {
-                            foreach (var groupDown in groupUp)
-                            {
-                                if ((BuiltInCategory)groupDown.IntegerValue == BuiltInCategory.OST_IOSModelGroups)
-                                {
-                                    Group group1 = (Group)element;
-                                    groupElements.Add(group1.UngroupMembers().ToList());
-                                }
-                            }
-                        }
-                        continue;
-                    }*/
+                    Element element = doc.GetElement(seleсtedElement);                 
 
                     if ((BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_IOSModelGroups ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Sections ||
@@ -146,7 +124,6 @@ namespace Plugin_for_Pioneer
                     BuiltInCategory enumCategory = (BuiltInCategory)category.Id.IntegerValue;
                     categoryList.Add(enumCategory);
                 }
-                t.Commit();
 
                 var categorySet = new CategorySet();
                 foreach (var category in categoryList.Distinct())
@@ -181,17 +158,14 @@ namespace Plugin_for_Pioneer
                     ts.Commit();
                 }
 
-                ConcurrentBag<Data> listDataElementTrue = new ConcurrentBag<Data>(); ///Многопоточная коллекция
+               ConcurrentBag<Data> listDataElementTrue = new ConcurrentBag<Data>(); ///Многопоточная коллекция
 
                var listDataElementSorted = listDataElement.OrderBy(pr => pr.guid).ToList();
                var listDataExcelSorted = listDataExcel.OrderBy(pr => pr.guid).ToList();
 
-                DateTime end; //Далее проверим как будет работать наша вычисления в многопоточном режиме                
-                DateTime start = DateTime.Now; //Засекаем время
                 //Многопоточность
                 Parallel.For(0, listDataElementSorted.Count, X =>
                 {
-                    //var desieredElement = listDataElement.FirstOrDefault(r => r.guid == excel.guid);
                     if (listDataElementSorted[X] != null)
                     {
                         //Если парамтеры не равны, добавляем в массив изменяемых элементов
@@ -203,13 +177,12 @@ namespace Plugin_for_Pioneer
                         }
                     }
                 });
-                end = DateTime.Now; // Записываем текущее время
 
                 //Заносим значения в параметр у элементов с флагом
-                DateTime end2;              
-                DateTime start2 = DateTime.Now; //Засекаем время
 
                 List<List<ElementId>> groupElements = new List<List<ElementId>>();
+                List<String> groupNames = new List<String>();
+                List<Element> groupId = new List<Element>();
 
                 if (listDataElementTrue.Count > 0)
                 {
@@ -225,7 +198,10 @@ namespace Plugin_for_Pioneer
                             if(desieredElementTrue.element.GroupId.IntegerValue != -1)
                             {
                                 Group group = (Group)doc.GetElement(desieredElementTrue.element.GroupId);
+                                groupId.Add(doc.GetElement(desieredElementTrue.element.GroupId));
+                                groupNames.Add(group.Name);
                                 List<ElementId> elements = group.UngroupMembers().ToList();
+                                doc.Delete(group.Id);
                                 groupElements.Add(elements);
                                 foreach (var element in elements)
                                 {
@@ -239,20 +215,15 @@ namespace Plugin_for_Pioneer
                     }
                     transaction.Commit();
                 }
-                end2 = DateTime.Now;
-
-                TimeSpan taim = (end - start);
-                TaskDialog.Show("Время выполнения", $"{taim.TotalMilliseconds} миллисекунд");
-
-
-                TimeSpan taim2 = (end2 - start2);
-                TaskDialog.Show("Время выполнения", $"{taim2.TotalMilliseconds} миллисекунд");
 
                 Transaction tr = new Transaction(doc, "NewGroup");
                 tr.Start();
+                int i = 0;
                 foreach (var group in groupElements)
                 {
                     Group groupNew = doc.Create.NewGroup(group);
+                    /*groupNew.Name = groupNames[i];
+                    i++;*/
                 }
                 tr.Commit();
             }
