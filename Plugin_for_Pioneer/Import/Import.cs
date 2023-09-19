@@ -15,6 +15,7 @@ using System.Threading.Tasks; // Библиотека для работы пар
 using System.Collections.Concurrent; //Библиотека, содержащая потокобезопасные коллекции
 using System.Security.Policy;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
+using System.Collections;
 
 namespace Plugin_for_Pioneer
 {
@@ -126,15 +127,17 @@ namespace Plugin_for_Pioneer
                 }
 
                 var categorySet = new CategorySet();
-                foreach (var category in categoryList.Distinct())
+                IEnumerable<BuiltInCategory> categoryListDistinct = categoryList.Distinct();
+                foreach (var category in categoryListDistinct)
                 {
                     categorySet.Insert(Category.GetCategory(doc, category));
                 }
-
+               
+                //IEnumerable<Element> elementListDistinct = elementList.Distinct();
                 using (Transaction ts = new Transaction(doc, "Add parameter"))
                 {
                     ts.Start();
-                    foreach (var element in elementList.Distinct())
+                    /*foreach (var element in elementListDistinct)
                     {
                         if (element.LookupParameter("PNR_Код по классификатору") == null
                             || element.LookupParameter("PNR_Описание по классификатору") == null)
@@ -154,26 +157,42 @@ namespace Plugin_for_Pioneer
                                                                BuiltInParameterGroup.PG_IDENTITY_DATA,
                                                                true);
                         }
-                    }
+                    }*/
+                    CreateShared createShared_pnr_1 = new CreateShared();
+                    createShared_pnr_1.CreateSharedParameter(uiapp.Application,
+                                                       doc,
+                                                       "PNR_Код по классификатору",
+                                                       categorySet,
+                                                       BuiltInParameterGroup.PG_IDENTITY_DATA,
+                                                       true);
+                    CreateShared createShared_pnr_2 = new CreateShared();
+                    createShared_pnr_2.CreateSharedParameter(uiapp.Application,
+                                                       doc,
+                                                       "PNR_Описание по классификатору",
+                                                       categorySet,
+                                                       BuiltInParameterGroup.PG_IDENTITY_DATA,
+                                                       true);
                     ts.Commit();
                 }
 
-               ConcurrentBag<Data> listDataElementTrue = new ConcurrentBag<Data>(); ///Многопоточная коллекция
+                ConcurrentBag<Data> listDataElementTrue = new ConcurrentBag<Data>(); ///Многопоточная коллекция
 
                var listDataElementSorted = listDataElement.OrderBy(pr => pr.guid).ToList();
                var listDataExcelSorted = listDataExcel.OrderBy(pr => pr.guid).ToList();
 
                 //Многопоточность
-                Parallel.For(0, listDataElementSorted.Count, X =>
+                Parallel.For(0, listDataExcelSorted.Count, X =>
                 {
-                    if (listDataElementSorted[X] != null)
-                    {
+                    var element = listDataElementSorted.FirstOrDefault(x => x.guid == listDataExcelSorted[X].guid);
+
+                    if (element != null)
+                    { 
                         //Если парамтеры не равны, добавляем в массив изменяемых элементов
-                        if (listDataElementSorted[X].pnr_1 != listDataExcelSorted[X].pnr_1 
-                        || listDataElementSorted[X].pnr_2 != listDataExcelSorted[X].pnr_2)
+                        if (element.pnr_1 != listDataExcelSorted[X].pnr_1 
+                        || element.pnr_2 != listDataExcelSorted[X].pnr_2)
                         {
                             if (listDataExcelSorted[X].pnr_1 != "" & listDataExcelSorted[X].pnr_2 != "")
-                                listDataElementTrue.Add(listDataElementSorted[X]);
+                                listDataElementTrue.Add(element);
                         }
                     }
                 });
@@ -183,6 +202,7 @@ namespace Plugin_for_Pioneer
                 List<List<ElementId>> groupElements = new List<List<ElementId>>();
                 List<String> groupNames = new List<String>();
                 List<Element> groupId = new List<Element>();
+                var listDataElementTrueSorted = listDataElementTrue.OrderBy(pr => pr.guid).ToList();
 
                 if (listDataElementTrue.Count > 0)
                 {
@@ -198,16 +218,21 @@ namespace Plugin_for_Pioneer
                             if(desieredElementTrue.element.GroupId.IntegerValue != -1)
                             {
                                 Group group = (Group)doc.GetElement(desieredElementTrue.element.GroupId);
+                                
+                                if (group.GroupId.IntegerValue != -1)
+                                    continue;
+                                
                                 groupId.Add(doc.GetElement(desieredElementTrue.element.GroupId));
                                 groupNames.Add(group.Name);
-                                List<ElementId> elements = group.UngroupMembers().ToList();
-                                doc.Delete(group.Id);
-                                groupElements.Add(elements);
-                                foreach (var element in elements)
+/*                                List<ElementId> elementsInGroup = group.GetMemberIds().ToList();
+                                foreach (var element in elementsInGroup)
                                 {
                                     if ((BuiltInCategory)element.IntegerValue == BuiltInCategory.OST_IOSModelGroups)
                                         continue;
-                                }
+                                }*/
+                                List<ElementId> elements = group.UngroupMembers().ToList();
+                                doc.Delete(group.Id);
+                                groupElements.Add(elements);
                             }
                             desieredElementTrue.element.LookupParameter("PNR_Код по классификатору").Set(excelElement.pnr_1);
                             desieredElementTrue.element.LookupParameter("PNR_Описание по классификатору").Set(excelElement.pnr_2);
@@ -222,8 +247,7 @@ namespace Plugin_for_Pioneer
                 foreach (var group in groupElements)
                 {
                     Group groupNew = doc.Create.NewGroup(group);
-                    /*groupNew.Name = groupNames[i];
-                    i++;*/
+                    i++;
                 }
                 tr.Commit();
             }
