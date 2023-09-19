@@ -177,8 +177,8 @@ namespace Plugin_for_Pioneer
 
                 ConcurrentBag<Data> listDataElementTrue = new ConcurrentBag<Data>(); ///Многопоточная коллекция
 
-               var listDataElementSorted = listDataElement.OrderBy(pr => pr.guid).ToList();
-               var listDataExcelSorted = listDataExcel.OrderBy(pr => pr.guid).ToList();
+                var listDataElementSorted = listDataElement.OrderBy(pr => pr.guid).ToList();
+                var listDataExcelSorted = listDataExcel.OrderBy(pr => pr.guid).ToList();
 
                 //Многопоточность
                 Parallel.For(0, listDataExcelSorted.Count, X =>
@@ -224,12 +224,7 @@ namespace Plugin_for_Pioneer
                                 
                                 groupId.Add(doc.GetElement(desieredElementTrue.element.GroupId));
                                 groupNames.Add(group.Name);
-/*                                List<ElementId> elementsInGroup = group.GetMemberIds().ToList();
-                                foreach (var element in elementsInGroup)
-                                {
-                                    if ((BuiltInCategory)element.IntegerValue == BuiltInCategory.OST_IOSModelGroups)
-                                        continue;
-                                }*/
+                                group.GroupType.Name = "DELETE";
                                 List<ElementId> elements = group.UngroupMembers().ToList();
                                 doc.Delete(group.Id);
                                 groupElements.Add(elements);
@@ -247,6 +242,7 @@ namespace Plugin_for_Pioneer
                 foreach (var group in groupElements)
                 {
                     Group groupNew = doc.Create.NewGroup(group);
+                    groupNew.GroupType.Name = groupNames[i];
                     i++;
                 }
                 tr.Commit();
@@ -366,6 +362,42 @@ namespace Plugin_for_Pioneer
             catch (Autodesk.Revit.Exceptions.OperationCanceledException) { }
 
             return Result.Succeeded;
+        }
+    }
+
+    internal static class PurgeDocument
+    {
+        internal static List<ElementId> GetPurgeableElements(Document doc, List<PerformanceAdviserRuleId> performanceAdviserRuleIds)
+        {
+            List<FailureMessage> failureMessages = PerformanceAdviser.GetPerformanceAdviser().ExecuteRules(doc, performanceAdviserRuleIds).ToList();
+            if (failureMessages.Count > 0)
+            {
+                List<ElementId> purgeableElementIds = failureMessages[0].GetFailingElements().ToList();
+                return purgeableElementIds;
+            }
+            return null;
+        }
+
+        public static void Purge(Document doc)
+        {
+            //The internal GUID of the Performance Adviser Rule 
+            const string PurgeGuid = "e8c63650-70b7-435a-9010-ec97660c1bda";
+
+            List<PerformanceAdviserRuleId> performanceAdviserRuleIds = new List<PerformanceAdviserRuleId>();
+
+            //Iterating through all PerformanceAdviser rules looking to find that which matches PURGE_GUID
+            foreach (PerformanceAdviserRuleId performanceAdviserRuleId in PerformanceAdviser.GetPerformanceAdviser().GetAllRuleIds())
+            {
+                if (performanceAdviserRuleId.Guid.ToString() == PurgeGuid)
+                {
+                    performanceAdviserRuleIds.Add(performanceAdviserRuleId);
+                    break;
+                }
+            }
+
+            //Attempting to recover all purgeable elements and delete them from the document
+            List<ElementId> purgeableElementIds = GetPurgeableElements(doc, performanceAdviserRuleIds);
+            if (purgeableElementIds != null) { doc.Delete(purgeableElementIds); }
         }
     }
 
