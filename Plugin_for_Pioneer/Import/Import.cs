@@ -217,6 +217,7 @@ namespace Plugin_for_Pioneer
                                 {
                                     groups.Add(group);
                                 }
+                                continue;
                             }
                             //Заносим значение в параметр
                             desieredElementTrue.element.LookupParameter("PNR_Код по классификатору").Set(excelElement.pnr_1);
