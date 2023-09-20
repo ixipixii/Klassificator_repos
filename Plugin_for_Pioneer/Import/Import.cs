@@ -245,6 +245,7 @@ namespace Plugin_for_Pioneer
                     groupNew.GroupType.Name = groupNames[i];
                     i++;
                 }
+                PurgeDocument.Purge(doc);
                 tr.Commit();
             }
 
@@ -397,7 +398,15 @@ namespace Plugin_for_Pioneer
 
             //Attempting to recover all purgeable elements and delete them from the document
             List<ElementId> purgeableElementIds = GetPurgeableElements(doc, performanceAdviserRuleIds);
-            if (purgeableElementIds != null) { doc.Delete(purgeableElementIds); }
+
+            foreach (var purgeableElementId in purgeableElementIds)
+            {
+                if (purgeableElementId != null)
+                {
+                    if (doc.GetElement(purgeableElementId).Name == "DELETE")
+                        doc.Delete(purgeableElementId);
+                }
+            }
         }
     }
 
