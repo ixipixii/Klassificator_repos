@@ -204,19 +204,13 @@ namespace Plugin_for_Pioneer
                                 if (group.GroupId.IntegerValue != -1)
                                     continue;
 
-                                /*                                groupId.Add(doc.GetElement(desieredElementTrue.element.GroupId));
-                                                                groupNames.Add(group.Name);
-                                                                groupTypes.Add(group.GroupType);
-                                                                group.GroupType.Name = "DELETE";
-                                                                List<ElementId> elements = group.UngroupMembers().ToList();
-                                                                doc.Delete(group.Id);
-                                                                groupElements.Add(elements);*/
-
-
-                                if(groups.Contains(group) == false)
-                                {
-                                    groups.Add(group);
-                                }
+/*                                groupId.Add(doc.GetElement(desieredElementTrue.element.GroupId));
+                                groupNames.Add(group.Name);
+                                groupTypes.Add(group.GroupType);
+                                group.GroupType.Name = "DELETE";
+                                List<ElementId> elements = group.UngroupMembers().ToList();
+                                doc.Delete(group.Id);
+                                groupElements.Add(elements);*/
                                 continue;
                             }
                             //Заносим значение в параметр
@@ -241,7 +235,43 @@ namespace Plugin_for_Pioneer
                                 //PurgeDocument.Purge(doc);
                                 tr.Commit();*/
 
-                TaskDialog.Show("x", $"{groups.Count()}");
+
+                Transaction transactio = new Transaction(doc, "Работа с группами");
+                transactio.Start();
+
+                TaskDialog.Show("Работа с группой", "Работа с группой");
+
+                List<Group> groupsDoc = new FilteredElementCollector(doc)
+                    .OfClass(typeof(Group))
+                    .Cast<Group>().ToList();
+
+                var groupType = new FilteredElementCollector(doc)
+                    .OfClass(typeof(GroupType))
+                    .Cast<GroupType>()
+                    .FirstOrDefault(g => g.Name == "cntys21");
+
+                if (groupType != null)
+                {
+                    foreach (var group in groupsDoc)
+                    {
+                        var newGroup = (Group)doc.GetElement(new ElementId(group.Id.IntegerValue));
+                        var grEl = newGroup.UngroupMembers().ToList();
+                        groupElements.Add(grEl);
+                    }
+                }
+
+                TaskDialog.Show("Количество создаваемых групп", $"{groupElements.Count}");
+
+                foreach(var group in groupElements)
+                {
+                    Group newGroup = doc.Create.NewGroup(group);
+                    newGroup.GroupType = groupType;
+                }
+
+                transactio.Commit();
+
+                //TaskDialog.Show("x", $"{groupType.Count()}");
+                //TaskDialog.Show("x", $"{groupsDoc.Name}");
             }
 
             catch (Autodesk.Revit.Exceptions.OperationCanceledException) { }
@@ -406,6 +436,21 @@ namespace Plugin_for_Pioneer
                 }
             }
         }
+    }
+
+    internal class ElInGroup
+    {
+        public ElInGroup(Group group)
+        {
+            GroupId = group.Id.IntegerValue;
+            GroupName = group.Name;
+        }
+
+        public int GroupId { get; }
+
+        public string GroupName { get; set; }
+
+        public Dictionary<Element, string> Elements { get; } = new Dictionary<Element, string>();
     }
 
 }
