@@ -25,11 +25,13 @@ namespace Plugin_for_Pioneer
             var uidoc = uiapp.ActiveUIDocument;
             Document doc = commandData.Application.ActiveUIDocument.Document;
 
-            if(message == "Import3d")
+/*            if(message == "Import3d")
             {
                 Import3D(uiapp, uidoc, doc);
-            }
+            }*/
             
+            Import3D(uiapp, uidoc, doc);
+
             return Result.Succeeded;
         }
 

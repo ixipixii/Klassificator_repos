@@ -38,7 +38,7 @@ namespace Plugin_for_Pioneer
             var PulldownButtonData = new PulldownButtonData("Pioneer", "Pioneer");
             var group = ribbonPanel.AddItem(PulldownButtonData) as PulldownButton;
 
-            var PushButtonData_1 = new PushButtonData("Импорт", "Импорт", Assembly.GetExecutingAssembly().Location, "Plugin_for_Pioneer.Main");
+            var PushButtonData_1 = new PushButtonData("Импорт", "Импорт", Assembly.GetExecutingAssembly().Location, "Plugin_for_Pioneer.Import");
             var NewButton_1 = group.AddPushButton(PushButtonData_1) as PushButton;
 
             var PushButtonData_2 = new PushButtonData("Экспорт", "Экспорт", Assembly.GetExecutingAssembly().Location, "Plugin_for_Pioneer.Export");
