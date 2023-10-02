@@ -32,7 +32,7 @@ namespace Plugin_for_Pioneer
         {
             //Путь к картинке
             string absPath = GetExeDirectory();
-            string pathImg = Path.Combine(absPath, @"Resources\klassificator.png");
+            //string pathImg = Path.Combine(absPath, @"Resources\klassificator.png");
 
             Autodesk.Revit.UI.RibbonPanel ribbonPanel = null;
             foreach (Autodesk.Revit.UI.RibbonPanel ribbonPanel2 in application.GetRibbonPanels(Tab.AddIns))
@@ -58,9 +58,9 @@ namespace Plugin_for_Pioneer
 
             //PulldownButtonData.Image = new BitmapImage(new Uri("/Resources/button_icon.png", UriKind.RelativeOrAbsolute));
 
-            Uri uri = new Uri(pathImg, UriKind.Absolute);
+            /*Uri uri = new Uri(pathImg, UriKind.Absolute);
             BitmapImage bitmap = new BitmapImage(uri);
-            PulldownButtonData.LargeImage = bitmap;
+            PulldownButtonData.LargeImage = bitmap;*/
 
             return Result.Succeeded;
         }

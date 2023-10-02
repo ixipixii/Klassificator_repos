@@ -194,7 +194,7 @@ namespace Plugin_for_Pioneer
 
                             //Заносим значение в параметр
                             desieredElementTrue.element.LookupParameter("PNR_Код по классификатору").Set(excelElement.pnr_1);
-                            desieredElementTrue.element.LookupParameter("PNR_Описание по классификатору").Set(excelElement.pnr_2);
+                            desieredElementTrue.element.LookupParameter("PNR_Описание по класси1фикатору").Set(excelElement.pnr_2);
                         }
                     }
                     transaction.Commit();
