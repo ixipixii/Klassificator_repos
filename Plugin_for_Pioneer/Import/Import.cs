@@ -101,7 +101,10 @@ namespace Plugin_for_Pioneer
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_VolumeOfInterest ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_BoundaryConditions ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Grids ||
-                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_GridChains
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_GridChains ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Dimensions ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_WeakDims |
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_CurtainWallPanels
                         )
                         continue;
 
@@ -133,7 +136,7 @@ namespace Plugin_for_Pioneer
                 }
 
                 //IEnumerable<Element> elementListDistinct = elementList.Distinct();
-                using (Transaction ts = new Transaction(doc, "Add parameter"))
+/*                using (Transaction ts = new Transaction(doc, "Add parameter"))
                 {
                     ts.Start();
                     CreateShared createShared_pnr_1 = new CreateShared();
@@ -151,7 +154,7 @@ namespace Plugin_for_Pioneer
                                                        BuiltInParameterGroup.PG_IDENTITY_DATA,
                                                        true);
                     ts.Commit();
-                }
+                }*/
 
                 ConcurrentBag<Data> listDataElementTrue = new ConcurrentBag<Data>(); ///Многопоточная коллекция
 
@@ -193,8 +196,39 @@ namespace Plugin_for_Pioneer
                                 continue;
 
                             //Заносим значение в параметр
-                            desieredElementTrue.element.LookupParameter("PNR_Код по классификатору").Set(excelElement.pnr_1);
-                            desieredElementTrue.element.LookupParameter("PNR_Описание по класси1фикатору").Set(excelElement.pnr_2);
+                            if(desieredElementTrue.element.LookupParameter("PNR_Код по классификатору") != null)
+                                desieredElementTrue.element.LookupParameter("PNR_Код по классификатору").Set(excelElement.pnr_1);
+                            else
+                            {
+                                var categorySetElement = new CategorySet();
+                                categorySetElement.Insert(desieredElementTrue.element.Category);
+                                CreateShared createShared_pnr_1 = new CreateShared();
+                                createShared_pnr_1.CreateSharedParameter(uiapp.Application,
+                                                                   doc,
+                                                                   "PNR_Код по классификатору",
+                                                                   categorySetElement,
+                                                                   BuiltInParameterGroup.PG_IDENTITY_DATA,
+                                                                   true);
+                                desieredElementTrue.element.LookupParameter("PNR_Код по классификатору").Set(excelElement.pnr_1);
+                            }
+                                
+
+                            
+                            if(desieredElementTrue.element.LookupParameter("PNR_Описание по классификатору") != null)
+                                desieredElementTrue.element.LookupParameter("PNR_Описание по классификатору").Set(excelElement.pnr_2);                           
+                            else
+                            {
+                                var categorySetElement = new CategorySet();
+                                categorySetElement.Insert(desieredElementTrue.element.Category);
+                                CreateShared createShared_pnr_2 = new CreateShared();
+                                createShared_pnr_2.CreateSharedParameter(uiapp.Application,
+                                                                   doc,
+                                                                   "PNR_Описание по классификатору",
+                                                                   categorySetElement,
+                                                                   BuiltInParameterGroup.PG_IDENTITY_DATA,
+                                                                   true);
+                                desieredElementTrue.element.LookupParameter("PNR_Описание по классификатору").Set(excelElement.pnr_2);
+                            }
                         }
                     }
                     transaction.Commit();

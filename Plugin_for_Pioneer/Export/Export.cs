@@ -48,7 +48,7 @@ namespace Plugin_for_Pioneer
                     OverwritePrompt = true,
                     InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
                     Filter = "All files (*.*)|*.*",
-                    FileName = "klassificator_info.csv",
+                    FileName = "Classification.csv",
                     DefaultExt = ".csv"
                 };
 
@@ -73,7 +73,25 @@ namespace Plugin_for_Pioneer
                     foreach(var element in elementList)
                     {
                         if (element.LookupParameter("PNR_Код по классификатору") == null || element.LookupParameter("PNR_Описание по классификатору") == null)
+                        {
+                            if(element.LookupParameter("PNR_Код по классификатору") != null && element.LookupParameter("PNR_Описание по классификатору") == null)
+                            {
+                                sheet.SetCellValue(rowIndex, columnIndex: 0, element.LookupParameter("PNR_Код по классификатору").AsString());
+                                sheet.SetCellValue(rowIndex, columnIndex: 1, "");
+                                sheet.SetCellValue(rowIndex, columnIndex: 2, element.UniqueId);
+                                rowIndex++;
+                                continue;
+                            }
+                            if(element.LookupParameter("PNR_Код по классификатору") == null && element.LookupParameter("PNR_Описание по классификатору") != null)
+                            {
+                                sheet.SetCellValue(rowIndex, columnIndex: 0, "");
+                                sheet.SetCellValue(rowIndex, columnIndex: 1, element.LookupParameter("PNR_Описание по классификатору").AsString());
+                                sheet.SetCellValue(rowIndex, columnIndex: 2, element.UniqueId);
+                                rowIndex++;
+                                continue;
+                            }
                             continue;
+                        }
                         sheet.SetCellValue(rowIndex, columnIndex: 0, element.LookupParameter("PNR_Код по классификатору").AsString());
                         sheet.SetCellValue(rowIndex, columnIndex: 1, element.LookupParameter("PNR_Описание по классификатору").AsString());
                         sheet.SetCellValue(rowIndex, columnIndex: 2, element.UniqueId);
