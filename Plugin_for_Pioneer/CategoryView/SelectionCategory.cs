@@ -45,7 +45,7 @@ namespace Plugin_for_Pioneer.CategoryView
             }
 
             Import import = new Import();
-            import.ImportCategory(CategoryView.SelectedCategoryList, uiapp, uidoc, doc);
+            //import.ImportCategory(CategoryView.SelectedCategoryList, uiapp, uidoc, doc);
         }
 
         public event EventHandler CloseRequest;

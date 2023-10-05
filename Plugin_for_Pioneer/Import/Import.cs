@@ -6,6 +6,7 @@ using NPOI.SS.Formula.Functions;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -27,12 +28,8 @@ namespace Plugin_for_Pioneer
             var uiapp = commandData.Application;
             var uidoc = uiapp.ActiveUIDocument;
             Document doc = commandData.Application.ActiveUIDocument.Document;
-
-            if (message == "Import3d")
-            {
-                Import3D(uiapp, uidoc, doc);
-            }
-
+            
+            Import3D(uiapp, uidoc, doc);
             return Result.Succeeded;
         }
 
@@ -102,7 +99,26 @@ namespace Plugin_for_Pioneer
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_VolumeOfInterest ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_BoundaryConditions ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Grids ||
-                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_GridChains
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_GridChains ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Dimensions ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_WeakDims ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_ShaftOpeningHiddenLines ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_gbXML_OpeningAir ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_GbXML_Opening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_MassOpening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_ArcWallRectOpening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_DormerOpeningIncomplete ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_SWallRectOpening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_ShaftOpening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_StructuralFramingOpening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_ColumnOpening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_FloorOpening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_RoofOpening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_IOSOpening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_DoorsOpeningProjection ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_DoorsOpeningCut ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_WindowsOpeningProjection ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_WindowsOpeningCut
                         )
                         continue;
 
@@ -176,14 +192,7 @@ namespace Plugin_for_Pioneer
                     }
                 });
 
-                List<List<ElementId>> groupElements = new List<List<ElementId>>();
-                List<String> groupNames = new List<String>();
-                List<Element> groupId = new List<Element>();
-                List<GroupType> groupTypes = new List<GroupType>();
-
                 var listDataElementTrueSorted = listDataElementTrue.OrderBy(pr => pr.guid).ToList();
-
-                List<Group> groups = new List<Group>();
 
                 //Заносим значения в параметр из листа нужных элементов 
                 if (listDataElementTrue.Count > 0)
@@ -198,21 +207,8 @@ namespace Plugin_for_Pioneer
                         if (desieredElementTrue != null)
                         {
                             if (desieredElementTrue.element.GroupId.IntegerValue != -1)
-                            {
-                                Group group = (Group)doc.GetElement(desieredElementTrue.element.GroupId);
-
-                                if (group.GroupId.IntegerValue != -1)
-                                    continue;
-
-/*                                groupId.Add(doc.GetElement(desieredElementTrue.element.GroupId));
-                                groupNames.Add(group.Name);
-                                groupTypes.Add(group.GroupType);
-                                group.GroupType.Name = "DELETE";
-                                List<ElementId> elements = group.UngroupMembers().ToList();
-                                doc.Delete(group.Id);
-                                groupElements.Add(elements);*/
                                 continue;
-                            }
+
                             //Заносим значение в параметр
                             desieredElementTrue.element.LookupParameter("PNR_Код по классификатору").Set(excelElement.pnr_1);
                             desieredElementTrue.element.LookupParameter("PNR_Описание по классификатору").Set(excelElement.pnr_2);
@@ -221,236 +217,12 @@ namespace Plugin_for_Pioneer
                     //PurgeDocument.Purge(doc);
                     transaction.Commit();
                 }
-
-                /*                Transaction tr = new Transaction(doc, "NewGroup");
-                                tr.Start();
-                                int i = 0;
-                                foreach (var groupNewInOld in groupElements)
-                                {
-                                    Group groupNew = doc.Create.NewGroup(groupNewInOld);
-                                    groupNew.GroupType = groupTypes[i];
-                                    //groupNew.GroupType.Name = groupNames[i];
-                                    i++;
-                                }
-                                //PurgeDocument.Purge(doc);
-                                tr.Commit();*/
-
-
-                Transaction transactio = new Transaction(doc, "Работа с группами");
-                transactio.Start();
-
-                TaskDialog.Show("Работа с группой", "Работа с группой");
-
-                List<Group> groupsDoc = new FilteredElementCollector(doc)
-                    .OfClass(typeof(Group))
-                    .Cast<Group>().ToList();
-
-                var groupType = new FilteredElementCollector(doc)
-                    .OfClass(typeof(GroupType))
-                    .Cast<GroupType>()
-                    .FirstOrDefault(g => g.Name == "cntys21");
-
-                if (groupType != null)
-                {
-                    foreach (var group in groupsDoc)
-                    {
-                        var newGroup = (Group)doc.GetElement(new ElementId(group.Id.IntegerValue));
-                        var grEl = newGroup.UngroupMembers().ToList();
-                        groupElements.Add(grEl);
-                    }
-                }
-
-                TaskDialog.Show("Количество создаваемых групп", $"{groupElements.Count}");
-
-                foreach(var group in groupElements)
-                {
-                    Group newGroup = doc.Create.NewGroup(group);
-                    newGroup.GroupType = groupType;
-                }
-
-                transactio.Commit();
-
-                //TaskDialog.Show("x", $"{groupType.Count()}");
-                //TaskDialog.Show("x", $"{groupsDoc.Name}");
             }
 
             catch (Autodesk.Revit.Exceptions.OperationCanceledException) { }
 
             return Result.Succeeded;
-        }
-
-        public Result ImportCategory(List<BuiltInCategory> SelectedCategoryList, UIApplication uiapp, UIDocument uidoc, Document doc)
-        {
-            try
-            {
-                var selectedRef = uidoc.Selection.PickObjects(Autodesk.Revit.UI.Selection.ObjectType.Element, "Выберите элементы");
-                var elementList = new List<Element>();
-
-                foreach (var seleсtedElement in selectedRef)
-                {
-                    Element element = doc.GetElement(seleсtedElement);
-                    elementList.Add(element);
-                }
-
-                var categorySet = new CategorySet();
-                foreach (var category in SelectedCategoryList.Distinct())
-                {
-                    categorySet.Insert(Category.GetCategory(doc, category));
-                }
-
-                using (Transaction ts = new Transaction(doc, "Add parameter"))
-                {
-                    ts.Start();
-                    foreach (var element in elementList)
-                    {
-                        if (element.LookupParameter("PNR_Код по классификатору") == null || element.LookupParameter("PNR_Описание по классификатору") == null)
-                        {
-                            CreateShared createShared_pnr_1 = new CreateShared();
-                            if (createShared_pnr_1.CreateSharedParameter(uiapp.Application,
-                                                               doc,
-                                                               "PNR_Код по классификатору",
-                                                               categorySet,
-                                                               BuiltInParameterGroup.PG_IDENTITY_DATA,
-                                                               true) == 1)
-                            {
-                                return Result.Succeeded;
-                            }
-
-                            CreateShared createShared_pnr_2 = new CreateShared();
-                            if (createShared_pnr_2.CreateSharedParameter(uiapp.Application,
-                                                               doc,
-                                                               "PNR_Описание по классификатору",
-                                                               categorySet,
-                                                               BuiltInParameterGroup.PG_IDENTITY_DATA,
-                                                               true) == 1)
-                            {
-                                return Result.Succeeded;
-                            }
-                        }
-                    }
-                    ts.Commit();
-                }
-
-                OpenFileDialog openFileDialog = new OpenFileDialog();
-                openFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                openFileDialog.Filter = "All files(*.*)|*.*";
-
-                string filePath = string.Empty;
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                    filePath = openFileDialog.FileName;
-
-                if (string.IsNullOrEmpty(filePath))
-                    return Result.Cancelled;
-
-                using (FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-                {
-                    IWorkbook workbook = new XSSFWorkbook(filePath);
-                    ISheet sheet = workbook.GetSheetAt(index: 0);
-
-                    int rowIndex = 0;
-
-                    using (Transaction ts = new Transaction(doc, "Set parameters"))
-                    {
-                        ts.Start();
-                        while (sheet.GetRow(rowIndex) != null)
-                        {
-                            if (sheet.GetRow(rowIndex).GetCell(0) == null ||
-                                sheet.GetRow(rowIndex).GetCell(1) == null ||
-                                sheet.GetRow(rowIndex).GetCell(2) == null)
-                            {
-                                rowIndex++;
-                                continue;
-                            }
-
-                            string pnr_1 = sheet.GetRow(rowIndex).GetCell(0).StringCellValue;
-                            string pnr_2 = sheet.GetRow(rowIndex).GetCell(1).StringCellValue;
-                            string guid = sheet.GetRow(rowIndex).GetCell(2).StringCellValue;
-
-                            var element = elementList.FirstOrDefault(r => r.UniqueId == guid);
-
-                            if (element == null)
-                            {
-                                rowIndex++;
-                                continue;
-                            }
-
-                            if (element.LookupParameter("PNR_Код по классификатору") != null)
-                                element.LookupParameter("PNR_Код по классификатору").Set(pnr_1);
-                            if (element.LookupParameter("PNR_Описание по классификатору") != null)
-                                element.LookupParameter("PNR_Описание по классификатору").Set(pnr_2);
-
-                            rowIndex++;
-                        }
-                        ts.Commit();
-                    }
-                }
-            }
-            catch (Autodesk.Revit.Exceptions.OperationCanceledException) { }
-
-            return Result.Succeeded;
-        }
-    }
-
-    internal static class PurgeDocument
-    {
-        internal static List<ElementId> GetPurgeableElements(Document doc, List<PerformanceAdviserRuleId> performanceAdviserRuleIds)
-        {
-            List<FailureMessage> failureMessages = PerformanceAdviser.GetPerformanceAdviser().ExecuteRules(doc, performanceAdviserRuleIds).ToList();
-            if (failureMessages.Count > 0)
-            {
-                List<ElementId> purgeableElementIds = failureMessages[0].GetFailingElements().ToList();
-                return purgeableElementIds;
-            }
-            return null;
-        }
-
-        public static void Purge(Document doc)
-        {
-            //The internal GUID of the Performance Adviser Rule 
-            const string PurgeGuid = "e8c63650-70b7-435a-9010-ec97660c1bda";
-
-            List<PerformanceAdviserRuleId> performanceAdviserRuleIds = new List<PerformanceAdviserRuleId>();
-
-            //Iterating through all PerformanceAdviser rules looking to find that which matches PURGE_GUID
-            foreach (PerformanceAdviserRuleId performanceAdviserRuleId in PerformanceAdviser.GetPerformanceAdviser().GetAllRuleIds())
-            {
-                if (performanceAdviserRuleId.Guid.ToString() == PurgeGuid)
-                {
-                    performanceAdviserRuleIds.Add(performanceAdviserRuleId);
-                    break;
-                }
-            }
-
-            //Attempting to recover all purgeable elements and delete them from the document
-            List<ElementId> purgeableElementIds = GetPurgeableElements(doc, performanceAdviserRuleIds);
-
-            if (purgeableElementIds.Count > 0)
-            {
-                foreach (var purgeableElementId in purgeableElementIds)
-                {
-                    if (purgeableElementId != null)
-                    {
-                        if (doc.GetElement(purgeableElementId).Name == "DELETE")
-                            doc.Delete(purgeableElementId);
-                    }
-                }
-            }
-        }
-    }
-
-    internal class ElInGroup
-    {
-        public ElInGroup(Group group)
-        {
-            GroupId = group.Id.IntegerValue;
-            GroupName = group.Name;
-        }
-
-        public int GroupId { get; }
-
-        public string GroupName { get; set; }
-
-        public Dictionary<Element, string> Elements { get; } = new Dictionary<Element, string>();
+        }           
     }
 
 }

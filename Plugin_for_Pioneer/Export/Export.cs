@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace Plugin_for_Pioneer
 {
@@ -36,13 +37,34 @@ namespace Plugin_for_Pioneer
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Levels)
                         continue;
                     elementList.Add(element);
-                }                
+                }
 
                 //Запись параметров в файл
-                string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                string excelPath = Path.Combine(desktopPath, "pioneer_plugin.xlsx");
+                /*string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                string excelPath = Path.Combine(desktopPath, "pioneer_plugin.xlsx");*/
 
-                using (FileStream stream = new FileStream(excelPath, FileMode.Create, FileAccess.Write))
+                var saveDialog = new SaveFileDialog
+                {
+                    OverwritePrompt = true,
+                    InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                    Filter = "All files (*.*)|*.*",
+                    FileName = "Classification.csv",
+                    DefaultExt = ".csv"
+                };
+
+                string selectedFilePath = string.Empty;
+                
+                if(saveDialog.ShowDialog() == DialogResult.OK)
+                {
+                    selectedFilePath = saveDialog.FileName;
+                }
+
+                if(selectedFilePath == string.Empty)
+                {
+                    return Result.Succeeded;
+                }
+
+                using (FileStream stream = new FileStream(selectedFilePath, FileMode.Create, FileAccess.Write))
                 {
                     IWorkbook workbook = new XSSFWorkbook();
                     ISheet sheet = workbook.CreateSheet("Лист 1");
@@ -51,7 +73,25 @@ namespace Plugin_for_Pioneer
                     foreach(var element in elementList)
                     {
                         if (element.LookupParameter("PNR_Код по классификатору") == null || element.LookupParameter("PNR_Описание по классификатору") == null)
+                        {
+                            if(element.LookupParameter("PNR_Код по классификатору") != null && element.LookupParameter("PNR_Описание по классификатору") == null)
+                            {
+                                sheet.SetCellValue(rowIndex, columnIndex: 0, element.LookupParameter("PNR_Код по классификатору").AsString());
+                                sheet.SetCellValue(rowIndex, columnIndex: 1, "");
+                                sheet.SetCellValue(rowIndex, columnIndex: 2, element.UniqueId);
+                                rowIndex++;
+                                continue;
+                            }
+                            if(element.LookupParameter("PNR_Код по классификатору") == null && element.LookupParameter("PNR_Описание по классификатору") != null)
+                            {
+                                sheet.SetCellValue(rowIndex, columnIndex: 0, "");
+                                sheet.SetCellValue(rowIndex, columnIndex: 1, element.LookupParameter("PNR_Описание по классификатору").AsString());
+                                sheet.SetCellValue(rowIndex, columnIndex: 2, element.UniqueId);
+                                rowIndex++;
+                                continue;
+                            }
                             continue;
+                        }
                         sheet.SetCellValue(rowIndex, columnIndex: 0, element.LookupParameter("PNR_Код по классификатору").AsString());
                         sheet.SetCellValue(rowIndex, columnIndex: 1, element.LookupParameter("PNR_Описание по классификатору").AsString());
                         sheet.SetCellValue(rowIndex, columnIndex: 2, element.UniqueId);
@@ -62,7 +102,7 @@ namespace Plugin_for_Pioneer
                     workbook.Close();
                 }
 
-                System.Diagnostics.Process.Start(excelPath);
+                System.Diagnostics.Process.Start(selectedFilePath);
 
             }
             catch (Autodesk.Revit.Exceptions.OperationCanceledException) { }
