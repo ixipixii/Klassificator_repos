@@ -24,14 +24,8 @@ namespace Plugin_for_Pioneer
             var uiapp = commandData.Application;
             var uidoc = uiapp.ActiveUIDocument;
             Document doc = commandData.Application.ActiveUIDocument.Document;
-
-/*            if(message == "Import3d")
-            {
-                Import3D(uiapp, uidoc, doc);
-            }*/
             
             Import3D(uiapp, uidoc, doc);
-
             return Result.Succeeded;
         }
 
@@ -120,10 +114,7 @@ namespace Plugin_for_Pioneer
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_DoorsOpeningProjection ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_DoorsOpeningCut ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_WindowsOpeningProjection ||
-                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_WindowsOpeningCut /*||
-                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_CurtainWallPanels*/ /*||
-                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_CurtainWallMullions ||
-                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_CurtainGrids*/
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_WindowsOpeningCut
                         )
                         continue;
 
@@ -155,7 +146,7 @@ namespace Plugin_for_Pioneer
                 }
 
                 //IEnumerable<Element> elementListDistinct = elementList.Distinct();
-/*                using (Transaction ts = new Transaction(doc, "Add parameter"))
+                using (Transaction ts = new Transaction(doc, "Add parameter"))
                 {
                     ts.Start();
                     CreateShared createShared_pnr_1 = new CreateShared();
@@ -173,7 +164,7 @@ namespace Plugin_for_Pioneer
                                                        BuiltInParameterGroup.PG_IDENTITY_DATA,
                                                        true);
                     ts.Commit();
-                }*/
+                }
 
                 ConcurrentBag<Data> listDataElementTrue = new ConcurrentBag<Data>(); ///Многопоточная коллекция
 
@@ -215,43 +206,8 @@ namespace Plugin_for_Pioneer
                                 continue;
 
                             //Заносим значение в параметр
-
-                            //FamilyParameter familyParameter = doc.FamilyManager.get_Parameter
-
-                            if (desieredElementTrue.element.LookupParameter("PNR_Код по классификатору") != null)
-                                desieredElementTrue.element.LookupParameter("PNR_Код по классификатору").Set(excelElement.pnr_1);
-                            else
-                            {
-                                var categorySetElement = new CategorySet();
-                                categorySetElement.Insert(desieredElementTrue.element.Category);
-                                CreateShared createShared_pnr_1 = new CreateShared();
-                                createShared_pnr_1.CreateSharedParameter(uiapp.Application,
-                                                                   doc,
-                                                                   "PNR_Код по классификатору",
-                                                                   categorySetElement,
-                                                                   BuiltInParameterGroup.PG_IDENTITY_DATA,
-                                                                   true);
-                                desieredElementTrue.element.LookupParameter("PNR_Код по классификатору").Set(excelElement.pnr_1);
-                            }
-                                
-
-                            
-                            if(desieredElementTrue.element.LookupParameter("PNR_Описание по классификатору") != null)
-                                desieredElementTrue.element.LookupParameter("PNR_Описание по классификатору").Set(excelElement.pnr_2);                           
-                            else
-                            {
-                                var categorySetElement = new CategorySet();
-                                categorySetElement.Insert(desieredElementTrue.element.Category);
-                                CreateShared createShared_pnr_2 = new CreateShared();
-                                createShared_pnr_2.CreateSharedParameter(uiapp.Application,
-                                                                   doc,
-                                                                   "PNR_Описание по классификатору",
-                                                                   categorySetElement,
-                                                                   BuiltInParameterGroup.PG_IDENTITY_DATA,
-                                                                   true);
-                                desieredElementTrue.element.LookupParameter("PNR_Описание по классификатору").Set(excelElement.pnr_2);
-                            }
-
+                            desieredElementTrue.element.LookupParameter("PNR_Код по классификатору").Set(excelElement.pnr_1);
+                            desieredElementTrue.element.LookupParameter("PNR_Описание по классификатору").Set(excelElement.pnr_2);
                         }
                     }
                     transaction.Commit();
@@ -261,117 +217,6 @@ namespace Plugin_for_Pioneer
             catch (Autodesk.Revit.Exceptions.OperationCanceledException) { }
 
             return Result.Succeeded;
-        }
-        
-        public Result ImportCategory(List<BuiltInCategory> SelectedCategoryList, UIApplication uiapp, UIDocument uidoc, Document doc)
-        {
-            try
-            {
-                var selectedRef = uidoc.Selection.PickObjects(Autodesk.Revit.UI.Selection.ObjectType.Element, "Выберите элементы");
-                var elementList = new List<Element>();
-
-                foreach (var seleсtedElement in selectedRef)
-                {
-                    Element element = doc.GetElement(seleсtedElement);
-                    elementList.Add(element);
-                }
-
-                var categorySet = new CategorySet();
-                foreach (var category in SelectedCategoryList.Distinct())
-                {
-                    categorySet.Insert(Category.GetCategory(doc, category));
-                }
-
-                using (Transaction ts = new Transaction(doc, "Add parameter"))
-                {
-                    ts.Start();
-                    foreach (var element in elementList)
-                    {
-                        if (element.LookupParameter("PNR_Код по классификатору") == null || element.LookupParameter("PNR_Описание по классификатору") == null)
-                        {
-                            CreateShared createShared_pnr_1 = new CreateShared();
-                            if (createShared_pnr_1.CreateSharedParameter(uiapp.Application,
-                                                               doc,
-                                                               "PNR_Код по классификатору",
-                                                               categorySet,
-                                                               BuiltInParameterGroup.PG_IDENTITY_DATA,
-                                                               true) == 1)
-                            {
-                                return Result.Succeeded;
-                            }
-                            
-                            CreateShared createShared_pnr_2 = new CreateShared();
-                            if(createShared_pnr_2.CreateSharedParameter(uiapp.Application,
-                                                               doc,
-                                                               "PNR_Описание по классификатору",
-                                                               categorySet,
-                                                               BuiltInParameterGroup.PG_IDENTITY_DATA,
-                                                               true) == 1)
-                            {
-                                return Result.Succeeded;
-                            }
-                        }
-                    }
-                    ts.Commit();
-                }
-
-                OpenFileDialog openFileDialog = new OpenFileDialog();
-                openFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                openFileDialog.Filter = "All files(*.*)|*.*";
-
-                string filePath = string.Empty;
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                    filePath = openFileDialog.FileName;
-
-                if (string.IsNullOrEmpty(filePath))
-                    return Result.Cancelled;
-
-                using (FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-                {
-                    IWorkbook workbook = new XSSFWorkbook(filePath);
-                    ISheet sheet = workbook.GetSheetAt(index: 0);
-
-                    int rowIndex = 0;
-
-                    using (Transaction ts = new Transaction(doc, "Set parameters"))
-                    {
-                        ts.Start();
-                        while (sheet.GetRow(rowIndex) != null)
-                        {
-                            if (sheet.GetRow(rowIndex).GetCell(0) == null ||
-                                sheet.GetRow(rowIndex).GetCell(1) == null ||
-                                sheet.GetRow(rowIndex).GetCell(2) == null)
-                            {
-                                rowIndex++;
-                                continue;
-                            }
-
-                            string pnr_1 = sheet.GetRow(rowIndex).GetCell(0).StringCellValue;
-                            string pnr_2 = sheet.GetRow(rowIndex).GetCell(1).StringCellValue;
-                            string guid = sheet.GetRow(rowIndex).GetCell(2).StringCellValue;
-
-                            var element = elementList.FirstOrDefault(r => r.UniqueId == guid);
-
-                            if (element == null)
-                            {
-                                rowIndex++;
-                                continue;
-                            }
-
-                                if(element.LookupParameter("PNR_Код по классификатору") != null)
-                                    element.LookupParameter("PNR_Код по классификатору").Set(pnr_1);
-                                if (element.LookupParameter("PNR_Описание по классификатору") != null)
-                                    element.LookupParameter("PNR_Описание по классификатору").Set(pnr_2);
-                            
-                            rowIndex++;
-                        }
-                        ts.Commit();
-                    }
-                }
-            }
-            catch (Autodesk.Revit.Exceptions.OperationCanceledException) { }
-
-            return Result.Succeeded;
-        }
+        }           
     }
 }
