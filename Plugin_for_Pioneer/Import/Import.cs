@@ -103,8 +103,27 @@ namespace Plugin_for_Pioneer
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Grids ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_GridChains ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Dimensions ||
-                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_WeakDims |
-                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_CurtainWallPanels
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_WeakDims ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_ShaftOpeningHiddenLines ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_gbXML_OpeningAir ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_GbXML_Opening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_MassOpening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_ArcWallRectOpening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_DormerOpeningIncomplete ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_SWallRectOpening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_ShaftOpening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_StructuralFramingOpening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_ColumnOpening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_FloorOpening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_RoofOpening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_IOSOpening ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_DoorsOpeningProjection ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_DoorsOpeningCut ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_WindowsOpeningProjection ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_WindowsOpeningCut /*||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_CurtainWallPanels*/ /*||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_CurtainWallMullions ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_CurtainGrids*/
                         )
                         continue;
 
@@ -196,7 +215,10 @@ namespace Plugin_for_Pioneer
                                 continue;
 
                             //Заносим значение в параметр
-                            if(desieredElementTrue.element.LookupParameter("PNR_Код по классификатору") != null)
+
+                            //FamilyParameter familyParameter = doc.FamilyManager.get_Parameter
+
+                            if (desieredElementTrue.element.LookupParameter("PNR_Код по классификатору") != null)
                                 desieredElementTrue.element.LookupParameter("PNR_Код по классификатору").Set(excelElement.pnr_1);
                             else
                             {
@@ -229,6 +251,7 @@ namespace Plugin_for_Pioneer
                                                                    true);
                                 desieredElementTrue.element.LookupParameter("PNR_Описание по классификатору").Set(excelElement.pnr_2);
                             }
+
                         }
                     }
                     transaction.Commit();
