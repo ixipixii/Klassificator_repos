@@ -50,10 +50,13 @@ namespace Plugin_for_Pioneer
             var PulldownButtonData = new PulldownButtonData("Классификация", "Классификация");
             var group = ribbonPanel.AddItem(PulldownButtonData) as PulldownButton;
 
-            var PushButtonData_1 = new PushButtonData("Импорт", "Импорт", Assembly.GetExecutingAssembly().Location, "Plugin_for_Pioneer.Import");
+            var PushButtonData_0 = new PushButtonData("Создать параметр", "Создать параметр", Assembly.GetExecutingAssembly().Location, "Plugin_for_Pioneer.Create");
+            var NewButton_0 = group.AddPushButton(PushButtonData_0) as PushButton;
+
+            var PushButtonData_1 = new PushButtonData("Импорт параметра", "Импорт параметра", Assembly.GetExecutingAssembly().Location, "Plugin_for_Pioneer.Import");
             var NewButton_1 = group.AddPushButton(PushButtonData_1) as PushButton;
 
-            var PushButtonData_2 = new PushButtonData("Экспорт", "Экспорт", Assembly.GetExecutingAssembly().Location, "Plugin_for_Pioneer.Export");
+            var PushButtonData_2 = new PushButtonData("Экспорт параметра", "Экспорт параметра", Assembly.GetExecutingAssembly().Location, "Plugin_for_Pioneer.Export");
             var NewButton_2 = group.AddPushButton(PushButtonData_2) as PushButton;
 
             //PulldownButtonData.Image = new BitmapImage(new Uri("/Resources/button_icon.png", UriKind.RelativeOrAbsolute));

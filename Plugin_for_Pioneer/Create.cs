@@ -21,7 +21,7 @@ using System.Collections;
 namespace Plugin_for_Pioneer
 {
     [Transaction(TransactionMode.Manual)]
-    internal class Import : IExternalCommand
+    internal class Create : IExternalCommand
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
@@ -29,10 +29,11 @@ namespace Plugin_for_Pioneer
             var uidoc = uiapp.ActiveUIDocument;
             Document doc = commandData.Application.ActiveUIDocument.Document;
 
-            ImportParameter(uiapp, uidoc, doc);
+            CreateParameter(uiapp, uidoc, doc);
             return Result.Succeeded;
         }
-        public Result ImportParameter(UIApplication uiapp, UIDocument uidoc, Document doc)
+
+        public Result CreateParameter(UIApplication uiapp, UIDocument uidoc, Document doc)
         {
             try //Добавление и изменение параметра
             {
@@ -80,9 +81,7 @@ namespace Plugin_for_Pioneer
 
                 //Чтение элементов модели
                 var selectedRef = uidoc.Selection.PickObjects(Autodesk.Revit.UI.Selection.ObjectType.Element, "Выберите элементы");
-                var elementList = new List<Element>();
-
-                List<Data> listDataElement = new List<Data>();
+                var categoryList = new List<BuiltInCategory>();
 
                 foreach (var seleсtedElement in selectedRef)
                 {
@@ -118,73 +117,44 @@ namespace Plugin_for_Pioneer
                         )
                         continue;
 
-                    elementList.Add(element);
-
-                    //Закидываем данные элемента в объект Data
-                    Data elementData = new Data();
-                    if (element.LookupParameter("PNR_Код по классификатору") != null
-                        || element.LookupParameter("PNR_Описание по классификатору") != null)
-                    {
-                        elementData.pnr_1 = element.LookupParameter("PNR_Код по классификатору").AsString();
-                        elementData.pnr_2 = element.LookupParameter("PNR_Описание по классификатору").AsString();
-                    }
-                    elementData.guid = element.UniqueId;
-                    elementData.element = element;
-                    listDataElement.Add(elementData);
+                    //Добавление категорий
+                    Category category = element.Category;
+                    BuiltInCategory enumCategory = (BuiltInCategory)category.Id.IntegerValue;
+                    categoryList.Add(enumCategory);
                 }
 
-                ConcurrentBag<Data> listDataElementTrue = new ConcurrentBag<Data>(); ///Многопоточная коллекция
-
-                var listDataElementSorted = listDataElement.OrderBy(pr => pr.guid).ToList();
-                var listDataExcelSorted = listDataExcel.OrderBy(pr => pr.guid).ToList();
-
-                //Многопоточность
-                Parallel.For(0, listDataExcelSorted.Count, X =>
+                var categorySet = new CategorySet();
+                IEnumerable<BuiltInCategory> categoryListDistinct = categoryList.Distinct();
+                foreach (var category in categoryListDistinct)
                 {
-                    var element = listDataElementSorted.FirstOrDefault(x => x.guid == listDataExcelSorted[X].guid);
+                    categorySet.Insert(Category.GetCategory(doc, category));
+                }
 
-                    if (element != null)
-                    {
-                        //Если парамтеры не равны, добавляем в массив изменяемых элементов
-                        if (element.pnr_1 != listDataExcelSorted[X].pnr_1
-                        || element.pnr_2 != listDataExcelSorted[X].pnr_2)
-                        {
-                            if (listDataExcelSorted[X].pnr_1 != "" & listDataExcelSorted[X].pnr_2 != "")
-                                listDataElementTrue.Add(element);
-                        }
-                    }
-                });
-
-                var listDataElementTrueSorted = listDataElementTrue.OrderBy(pr => pr.guid).ToList();
-
-                //Заносим значения в параметр из листа нужных элементов 
-                if (listDataElementTrue.Count > 0)
+                using (Transaction ts = new Transaction(doc, "Add parameter"))
                 {
-                    Transaction transaction = new Transaction(doc, "Заносим значения в параметр");
-                    transaction.Start();
-                    foreach (var desieredElementTrue in listDataElementTrue)
-                    {
-                        if (desieredElementTrue == null)
-                            continue;
-                        var excelElement = listDataExcel.FirstOrDefault(r => r.guid == desieredElementTrue.guid);
-                        if (desieredElementTrue != null)
-                        {
-                            if (desieredElementTrue.element.GroupId.IntegerValue != -1)
-                                continue;
-
-                            //Заносим значение в параметр
-                            desieredElementTrue.element.LookupParameter("PNR_Код по классификатору").Set(excelElement.pnr_1);
-                            desieredElementTrue.element.LookupParameter("PNR_Описание по классификатору").Set(excelElement.pnr_2);
-                        }
-                    }
-                    transaction.Commit();
+                    ts.Start();
+                    CreateShared createShared_pnr_1 = new CreateShared();
+                    createShared_pnr_1.CreateSharedParameter(uiapp.Application,
+                                                       doc,
+                                                       "PNR_Код по классификатору",
+                                                       categorySet,
+                                                       BuiltInParameterGroup.PG_IDENTITY_DATA,
+                                                       true);
+                    CreateShared createShared_pnr_2 = new CreateShared();
+                    createShared_pnr_2.CreateSharedParameter(uiapp.Application,
+                                                       doc,
+                                                       "PNR_Описание по классификатору",
+                                                       categorySet,
+                                                       BuiltInParameterGroup.PG_IDENTITY_DATA,
+                                                       true);
+                    ts.Commit();
                 }
             }
 
             catch (Autodesk.Revit.Exceptions.OperationCanceledException) { }
 
             return Result.Succeeded;
-        }
+        }       
     }
 
 }

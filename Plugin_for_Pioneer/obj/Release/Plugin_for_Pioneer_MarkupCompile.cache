@@ -4,17 +4,17 @@
 library
 C#
 .cs
-C:\Users\Skynet\source\repos\Klassificator_repos\Plugin_for_Pioneer\obj\Debug\
+C:\Users\Skynet\Source\Repos\Klassificator_repos\Plugin_for_Pioneer\obj\Release\
 Plugin_for_Pioneer
 none
 false
-DEBUG;TRACE
+TRACE
 
 2-1306030406
 
-151171132013
-27-1105112326
+131964745128
+27977244229
 CategoryView\CategoryView.xaml;MainView\MainView.xaml;
 
-False
+True
 
