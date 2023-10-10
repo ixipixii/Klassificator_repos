@@ -114,7 +114,11 @@ namespace Plugin_for_Pioneer
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_DoorsOpeningProjection ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_DoorsOpeningCut ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_WindowsOpeningProjection ||
-                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_WindowsOpeningCut
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_WindowsOpeningCut ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_RoomSeparationLines ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Lines ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_CurtainGridsWall ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_CeilingOpening
                         )
                         continue;
 
@@ -173,8 +177,15 @@ namespace Plugin_for_Pioneer
                                 continue;
 
                             //Заносим значение в параметр
-                            desieredElementTrue.element.LookupParameter("PNR_Код по классификатору").Set(excelElement.pnr_1);
-                            desieredElementTrue.element.LookupParameter("PNR_Описание по классификатору").Set(excelElement.pnr_2);
+                            try
+                            {
+                                desieredElementTrue.element.LookupParameter("PNR_Код по классификатору").Set(excelElement.pnr_1);
+                                desieredElementTrue.element.LookupParameter("PNR_Описание по классификатору").Set(excelElement.pnr_2);
+                            }
+                            catch (System.NullReferenceException) { TaskDialog.Show("1", $"{desieredElementTrue.element.Category.Name}");
+                                                                    TaskDialog.Show("", $"{desieredElementTrue.element.Id}");
+                            }
+
                         }
                     }
                     transaction.Commit();

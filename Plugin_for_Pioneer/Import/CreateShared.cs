@@ -41,7 +41,8 @@ namespace Plugin_for_Pioneer
             {
                 //map.Remove(definition);
                 map.Insert(definition, binding, builtInParameterGroup);
-                //map.ReInsert(definition, binding, builtInParameterGroup);
+                //TaskDialog.Show("as", "done");
+                map.ReInsert(definition, binding, builtInParameterGroup);
             }
             catch (Autodesk.Revit.Exceptions.InvalidOperationException)
             {

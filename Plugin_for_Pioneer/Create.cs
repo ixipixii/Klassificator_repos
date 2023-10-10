@@ -113,7 +113,11 @@ namespace Plugin_for_Pioneer
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_DoorsOpeningProjection ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_DoorsOpeningCut ||
                         (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_WindowsOpeningProjection ||
-                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_WindowsOpeningCut
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_WindowsOpeningCut ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_RoomSeparationLines ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_Lines ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_CurtainGridsWall ||
+                        (BuiltInCategory)element.Category.Id.IntegerValue == BuiltInCategory.OST_CeilingOpening
                         )
                         continue;
 
@@ -129,6 +133,8 @@ namespace Plugin_for_Pioneer
                 {
                     categorySet.Insert(Category.GetCategory(doc, category));
                 }
+
+                TaskDialog.Show("aq", $"{categorySet.Size}");
 
                 using (Transaction ts = new Transaction(doc, "Add parameter"))
                 {
