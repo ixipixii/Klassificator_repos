@@ -17,6 +17,7 @@ using System.Collections.Concurrent; //Библиотека, содержаща�
 using System.Security.Policy;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
 using System.Collections;
+using System.Diagnostics;
 
 namespace Plugin_for_Pioneer
 {
@@ -34,6 +35,8 @@ namespace Plugin_for_Pioneer
         }
         public Result ImportParameter(UIApplication uiapp, UIDocument uidoc, Document doc)
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
             try //Добавление и изменение параметра
             {
                 //Чтение файла
@@ -51,6 +54,7 @@ namespace Plugin_for_Pioneer
                 if (string.IsNullOrEmpty(filePath))
                     return Result.Cancelled;
 
+                //Кэширование файла
                 using (FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
                 {
                     IWorkbook workbook = new XSSFWorkbook(filePath);
@@ -84,6 +88,7 @@ namespace Plugin_for_Pioneer
 
                 List<Data> listDataElement = new List<Data>();
 
+                //Кэширование модели
                 foreach (var seleсtedElement in selectedRef)
                 {
                     Element element = doc.GetElement(seleсtedElement);
@@ -137,6 +142,45 @@ namespace Plugin_for_Pioneer
                     listDataElement.Add(elementData);
                 }
 
+/*                //Без кэширования и многопогточности
+                Transaction tr = new Transaction(doc, "Заносим параметр");
+                tr.Start();
+                using (FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                {
+                    IWorkbook workbook = new XSSFWorkbook(filePath);
+                    ISheet sheet = workbook.GetSheetAt(index: 0);
+
+                    int rowIndex = 0;
+
+                    while (sheet.GetRow(rowIndex) != null)
+                    {
+                        if (sheet.GetRow(rowIndex).GetCell(0) == null ||
+                            sheet.GetRow(rowIndex).GetCell(1) == null ||
+                            sheet.GetRow(rowIndex).GetCell(2) == null)
+                        {
+                            rowIndex++;
+                            continue;
+                        }
+
+                        //Создаём объект-строку из Excel и добавляем в лист объектов-строк 
+                        Data excelData = new Data();
+                        excelData.pnr_1 = sheet.GetRow(rowIndex).GetCell(0).StringCellValue;
+                        excelData.pnr_2 = sheet.GetRow(rowIndex).GetCell(1).StringCellValue;
+                        excelData.guid = sheet.GetRow(rowIndex).GetCell(2).StringCellValue;
+                        listDataExcel.Add(excelData);
+
+                        var element = elementList.FirstOrDefault(r => r.UniqueId == sheet.GetRow(rowIndex).GetCell(2).StringCellValue);
+
+                        if (element != null)
+                        {
+                            element.LookupParameter("test").Set(sheet.GetRow(rowIndex).GetCell(2).StringCellValue);
+                        }
+                        rowIndex++;
+                    }
+                }
+                tr.Commit();*/
+
+
                 ConcurrentBag<Data> listDataElementTrue = new ConcurrentBag<Data>(); ///Многопоточная коллекция
 
                 var listDataElementSorted = listDataElement.OrderBy(pr => pr.guid).ToList();
@@ -179,11 +223,13 @@ namespace Plugin_for_Pioneer
                             //Заносим значение в параметр
                             try
                             {
-                                desieredElementTrue.element.LookupParameter("PNR_Код по классификатору").Set(excelElement.pnr_1);
-                                desieredElementTrue.element.LookupParameter("PNR_Описание по классификатору").Set(excelElement.pnr_2);
+                                desieredElementTrue.element.LookupParameter("test").Set(excelElement.pnr_1);
+                                //desieredElementTrue.element.LookupParameter("PNR_Описание по классификатору").Set(excelElement.pnr_2);
                             }
-                            catch (System.NullReferenceException) { TaskDialog.Show("1", $"{desieredElementTrue.element.Category.Name}");
-                                                                    TaskDialog.Show("", $"{desieredElementTrue.element.Id}");
+                            catch (System.NullReferenceException)
+                            {
+                                TaskDialog.Show("1", $"{desieredElementTrue.element.Category.Name}");
+                                TaskDialog.Show("", $"{desieredElementTrue.element.Id}");
                             }
 
                         }
@@ -193,6 +239,9 @@ namespace Plugin_for_Pioneer
             }
 
             catch (Autodesk.Revit.Exceptions.OperationCanceledException) { }
+            
+            stopwatch.Stop();
+            TaskDialog.Show("Время работы программы", "Время работы программы с кэшированием и многопоточностью: " + stopwatch.ElapsedMilliseconds.ToString() + " мс");
 
             return Result.Succeeded;
         }
